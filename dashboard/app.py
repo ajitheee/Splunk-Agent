@@ -5,204 +5,404 @@ import json
 import os
 import time
 import datetime
+import plotly.graph_objects as go
+import plotly.express as px
 
 API_URL = "http://localhost:8000"
 
-st.set_page_config(page_title="AgentShield for Splunk", layout="wide", page_icon="🛡️")
+st.set_page_config(
+    page_title="AgentShield for Splunk",
+    layout="wide",
+    page_icon="🛡️",
+    initial_sidebar_state="expanded"
+)
 
-# Custom CSS for Premium Design & Google Fonts
+# ─────────────────────────────────────────────────────────────────────────────
+#  MOTION DESIGN SYSTEM - Animated, vibrant cyber-security command center UI
+# ─────────────────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Space+Grotesk:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap');
 
-/* Force dark theme aggressively across all Streamlit container levels */
-html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"], .main, [data-testid="stApp"] {
-    font-family: 'Outfit', sans-serif !important;
-    background-color: #030712 !important;
-    background-image: radial-gradient(circle at 50% -20%, rgba(17, 24, 39, 0.8) 0%, rgba(3, 7, 18, 1) 100%) !important;
-    color: #F3F4F6 !important;
+/* ── KEYFRAME ANIMATIONS ── */
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.6); }
+  70%  { box-shadow: 0 0 0 12px rgba(139, 92, 246, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); }
+}
+@keyframes glow-red {
+  0%, 100% { box-shadow: 0 0 8px rgba(239, 68, 68, 0.5); }
+  50%       { box-shadow: 0 0 22px rgba(239, 68, 68, 0.9), 0 0 40px rgba(239, 68, 68, 0.3); }
+}
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes slide-in-up {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+@keyframes orbit {
+  from { transform: rotate(0deg) translateX(6px) rotate(0deg); }
+  to   { transform: rotate(360deg) translateX(6px) rotate(-360deg); }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-6px); }
+}
+@keyframes scan-line {
+  0%   { top: 0; opacity: 0.4; }
+  100% { top: 100%; opacity: 0; }
 }
 
-/* Fix Streamlit main padding and default colors */
-[data-testid="stHeader"] {
-    background-color: transparent !important;
+/* ── BASE ── */
+html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"],
+.main, [data-testid="stApp"], section.main {
+    font-family: 'Inter', sans-serif !important;
+    background: #04051A !important;
+    color: #E2E8F0 !important;
 }
 
+[data-testid="stHeader"] { background: transparent !important; }
+
+/* Animated background grid */
+[data-testid="stAppViewContainer"]::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image:
+        linear-gradient(rgba(139, 92, 246, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(139, 92, 246, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* ── SIDEBAR ── */
 [data-testid="stSidebar"] {
-    background-color: #0B0F19 !important;
-    border-right: 1px solid rgba(56, 189, 248, 0.08) !important;
+    background: linear-gradient(180deg, #060820 0%, #0A0C24 100%) !important;
+    border-right: 1px solid rgba(139, 92, 246, 0.15) !important;
 }
 
+[data-testid="stSidebar"]::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #8B5CF6, #EC4899, #06B6D4);
+}
+
+/* ── TYPOGRAPHY ── */
 h1, h2, h3, h4, h5, h6 {
     font-family: 'Space Grotesk', sans-serif !important;
     font-weight: 700 !important;
     letter-spacing: -0.02em !important;
-    color: #F9FAFB !important;
+    color: #F1F5F9 !important;
 }
 
-/* Glassmorphic card container styling */
-.custom-card {
-    background: linear-gradient(145deg, rgba(15, 23, 42, 0.8) 0%, rgba(9, 13, 26, 0.95) 100%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.04) !important;
-    border-radius: 16px !important;
-    padding: 24px !important;
-    margin-bottom: 20px !important;
-    box-shadow: 0 12px 30px -15px rgba(0, 0, 0, 0.8) !important;
-    backdrop-filter: blur(12px) !important;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+/* ── CARDS ── */
+.shield-card {
+    background: linear-gradient(135deg, rgba(15, 15, 40, 0.85) 0%, rgba(8, 8, 28, 0.95) 100%);
+    border: 1px solid rgba(139, 92, 246, 0.12);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 16px;
+    backdrop-filter: blur(20px);
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: slide-in-up 0.5s ease forwards;
+    position: relative;
+    overflow: hidden;
 }
 
-.custom-card:hover {
-    transform: translateY(-4px) !important;
-    border-color: rgba(56, 189, 248, 0.2) !important;
-    box-shadow: 0 15px 35px -10px rgba(56, 189, 248, 0.15) !important;
+.shield-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.5), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
 }
 
-/* Custom metrics grid */
-.metric-box {
-    background: rgba(15, 23, 42, 0.6) !important;
-    border: 1px solid rgba(255, 255, 255, 0.03) !important;
-    border-radius: 12px !important;
-    padding: 20px !important;
-    text-align: center;
-    border-top: 4px solid #3B82F6 !important;
-    backdrop-filter: blur(8px) !important;
+.shield-card:hover::before { opacity: 1; }
+
+.shield-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(139, 92, 246, 0.35);
+    box-shadow: 0 20px 40px -15px rgba(139, 92, 246, 0.25), 0 0 0 1px rgba(139, 92, 246, 0.1);
 }
 
-.timeline-container {
-    border-left: 2px dashed rgba(56, 189, 248, 0.15) !important;
-    margin-left: 20px !important;
-    padding-left: 28px !important;
-    margin-top: 20px !important;
+/* ── METRIC CARDS ── */
+.metric-card {
+    background: linear-gradient(135deg, rgba(15, 15, 40, 0.9) 0%, rgba(10, 10, 30, 0.95) 100%);
+    border-radius: 14px;
+    padding: 20px 22px;
+    border: 1px solid rgba(255,255,255,0.06);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    animation: slide-in-up 0.5s ease forwards;
 }
 
-.timeline-node {
-    position: relative !important;
-    margin-bottom: 35px !important;
-    transition: all 0.2s ease !important;
+.metric-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 3px;
+    border-radius: 0 0 14px 14px;
 }
 
-.timeline-node:hover {
-    transform: translateX(4px) !important;
+.metric-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(139, 92, 246, 0.3);
 }
 
-.timeline-bullet {
-    position: absolute !important;
-    left: -36px !important;
-    top: 6px !important;
-    width: 14px !important;
-    height: 14px !important;
-    border-radius: 50% !important;
-    background-color: #38BDF8 !important;
-    border: 3px solid #030712 !important;
-    box-shadow: 0 0 10px #38BDF8 !important;
-    transition: all 0.3s ease !important;
+.metric-card .label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #64748B;
+    font-family: 'Space Grotesk', sans-serif;
+    margin-bottom: 8px;
 }
 
-.timeline-node:hover .timeline-bullet {
-    transform: scale(1.3) !important;
-    box-shadow: 0 0 15px #38BDF8, 0 0 25px #38BDF8 !important;
+.metric-card .value {
+    font-size: 2.2rem;
+    font-weight: 900;
+    font-family: 'Inter', sans-serif;
+    letter-spacing: -0.03em;
+    line-height: 1;
 }
 
-.comment-card {
-    background: rgba(17, 24, 39, 0.45) !important;
-    border: 1px solid rgba(255, 255, 255, 0.03) !important;
-    border-radius: 12px !important;
-    padding: 16px !important;
-    margin-bottom: 12px !important;
-    border-left: 4px solid #64748B !important;
-    backdrop-filter: blur(6px) !important;
-    transition: all 0.2s ease !important;
+.metric-card .sub {
+    font-size: 0.75rem;
+    color: #475569;
+    margin-top: 4px;
+    font-family: 'Space Grotesk', sans-serif;
 }
 
-.comment-card:hover {
-    border-left-width: 6px !important;
-    background: rgba(17, 24, 39, 0.65) !important;
+/* ── BADGE SYSTEM ── */
+.badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 99px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    font-family: 'Space Grotesk', sans-serif;
+    text-transform: uppercase;
 }
 
-/* Override select boxes and inputs */
-div[data-baseweb="select"] > div {
-    background-color: rgba(15, 23, 42, 0.65) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    border-radius: 10px !important;
-    color: #F3F4F6 !important;
+/* ── INCIDENT CARDS ── */
+.incident-card {
+    background: linear-gradient(135deg, rgba(12, 12, 35, 0.95) 0%, rgba(8, 8, 24, 0.98) 100%);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 14px;
+    padding: 20px 22px;
+    margin-bottom: 12px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    animation: slide-in-left 0.4s ease forwards;
 }
 
-div[data-baseweb="select"] span {
-    color: #F3F4F6 !important;
+.incident-card:hover {
+    transform: translateX(4px);
+    box-shadow: -4px 0 30px -5px rgba(139, 92, 246, 0.2);
 }
 
-div[data-baseweb="popover"] {
-    background-color: #0B0F19 !important;
-    border: 1px solid rgba(56, 189, 248, 0.15) !important;
+/* ── TIMELINE ── */
+.tl-container {
+    position: relative;
+    padding-left: 32px;
+    margin-top: 16px;
 }
 
-div[role="option"] {
-    color: #F3F4F6 !important;
-    background-color: #0B0F19 !important;
+.tl-container::before {
+    content: '';
+    position: absolute;
+    left: 8px; top: 0; bottom: 0;
+    width: 2px;
+    background: linear-gradient(180deg, #8B5CF6, #EC4899, rgba(6, 182, 212, 0.2));
+    border-radius: 99px;
 }
 
-div[role="option"]:hover {
-    background-color: rgba(56, 189, 248, 0.15) !important;
+.tl-node {
+    position: relative;
+    margin-bottom: 28px;
+    animation: slide-in-left 0.4s ease forwards;
 }
 
-textarea, input {
-    background-color: rgba(15, 23, 42, 0.65) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    color: #F3F4F6 !important;
-    border-radius: 10px !important;
+.tl-dot {
+    position: absolute;
+    left: -28px;
+    top: 4px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 3px solid #04051A;
 }
 
-/* Button design */
+.tl-dot.threat { background: #EF4444; animation: glow-red 2s ease infinite; }
+.tl-dot.action { background: #10B981; animation: pulse-ring 2s ease infinite; }
+.tl-dot.info   { background: #06B6D4; }
+
+/* ── BUTTONS ── */
 div.stButton > button {
-    background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%) !important;
+    background: linear-gradient(135deg, #4C1D95 0%, #7C3AED 50%, #8B5CF6 100%) !important;
     color: #FFFFFF !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(139, 92, 246, 0.3) !important;
     border-radius: 10px !important;
     font-weight: 600 !important;
     padding: 10px 24px !important;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15) !important;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     font-family: 'Space Grotesk', sans-serif !important;
     width: 100% !important;
+    transition: all 0.3s ease !important;
+    letter-spacing: 0.01em !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+div.stButton > button::after {
+    content: '' !important;
+    position: absolute !important;
+    inset: 0 !important;
+    background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.08) 100%) !important;
+    transition: opacity 0.3s !important;
 }
 
 div.stButton > button:hover {
-    background: linear-gradient(135deg, #2563EB 0%, #60A5FA 100%) !important;
     transform: translateY(-2px) !important;
-    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.3), 0 0 12px rgba(96, 165, 250, 0.2) !important;
-    border-color: rgba(255, 255, 255, 0.18) !important;
+    box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4), 0 0 0 1px rgba(139, 92, 246, 0.3) !important;
 }
 
-div.stButton > button:active {
-    transform: translateY(0) !important;
-}
-
-/* Primary/Threat execution button styling */
+div.stButton > button[kind="primary"],
 div.stButton > button[type="primary"] {
-    background: linear-gradient(135deg, #7F1D1D 0%, #DC2626 100%) !important;
-    box-shadow: 0 4px 15px rgba(220, 38, 38, 0.25) !important;
+    background: linear-gradient(135deg, #7F1D1D 0%, #B91C1C 50%, #EF4444 100%) !important;
+    border-color: rgba(239, 68, 68, 0.3) !important;
 }
 
+div.stButton > button[kind="primary"]:hover,
 div.stButton > button[type="primary"]:hover {
-    background: linear-gradient(135deg, #991B1B 0%, #EF4444 100%) !important;
-    box-shadow: 0 6px 22px rgba(220, 38, 38, 0.4), 0 0 12px rgba(239, 68, 68, 0.2) !important;
+    box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4) !important;
 }
 
-/* Code block elements */
+/* ── INPUTS & SELECTS ── */
+div[data-baseweb="select"] > div {
+    background: rgba(15, 15, 40, 0.8) !important;
+    border: 1px solid rgba(139, 92, 246, 0.2) !important;
+    border-radius: 10px !important;
+    color: #E2E8F0 !important;
+    transition: border-color 0.2s !important;
+}
+
+div[data-baseweb="select"] > div:hover {
+    border-color: rgba(139, 92, 246, 0.5) !important;
+}
+
+div[data-baseweb="select"] span { color: #E2E8F0 !important; }
+
+div[data-baseweb="popover"] {
+    background: #0E0E2C !important;
+    border: 1px solid rgba(139, 92, 246, 0.25) !important;
+    border-radius: 12px !important;
+}
+
+div[role="option"] { color: #CBD5E1 !important; background: #0E0E2C !important; }
+div[role="option"]:hover { background: rgba(139, 92, 246, 0.15) !important; color: #F1F5F9 !important; }
+
+textarea, input[type="text"], input[type="search"] {
+    background: rgba(15, 15, 40, 0.8) !important;
+    border: 1px solid rgba(139, 92, 246, 0.2) !important;
+    color: #E2E8F0 !important;
+    border-radius: 10px !important;
+    font-family: 'Inter', sans-serif !important;
+    transition: border-color 0.2s !important;
+}
+
+textarea:focus, input:focus {
+    border-color: rgba(139, 92, 246, 0.6) !important;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1) !important;
+}
+
+/* ── CODE ── */
 code {
     font-family: 'Fira Code', monospace !important;
-    background-color: #070A13 !important;
-    color: #F43F5E !important;
-    padding: 3px 7px !important;
-    border-radius: 6px !important;
-    font-size: 0.85em !important;
-    border: 1px solid rgba(244, 63, 94, 0.08) !important;
+    background: rgba(139, 92, 246, 0.12) !important;
+    color: #C4B5FD !important;
+    padding: 2px 7px !important;
+    border-radius: 5px !important;
+    font-size: 0.83em !important;
+    border: 1px solid rgba(139, 92, 246, 0.2) !important;
+}
+
+/* ── COMMENT CARDS ── */
+.comment-card {
+    background: rgba(15, 15, 40, 0.6);
+    border: 1px solid rgba(255,255,255,0.04);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    border-left: 3px solid #8B5CF6;
+    transition: all 0.2s ease;
+}
+.comment-card:hover { border-left-width: 5px; background: rgba(15,15,40,0.85); }
+
+/* ── RADIO BUTTONS ── */
+[data-testid="stRadio"] label {
+    color: #94A3B8 !important;
+    font-family: 'Space Grotesk', sans-serif !important;
+    font-size: 0.9rem !important;
+    padding: 6px 0 !important;
+}
+[data-testid="stRadio"] label:hover { color: #E2E8F0 !important; }
+
+/* ── DATAFRAME ── */
+[data-testid="stDataFrame"] {
+    border: 1px solid rgba(139, 92, 246, 0.12) !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: rgba(15,15,40,0.5); }
+::-webkit-scrollbar-thumb { background: rgba(139, 92, 246, 0.4); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(139, 92, 246, 0.7); }
+
+/* ── ALERT BANNER ── */
+.threat-banner {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(220, 38, 38, 0.04) 100%);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    border-left: 4px solid #EF4444;
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin: 14px 0;
+    animation: glow-red 3s ease infinite;
+}
+
+/* ── SHIMMER SEPARATOR ── */
+.shimmer-line {
+    height: 1px;
+    margin: 24px 0;
+    background: linear-gradient(90deg, transparent, #8B5CF6, #EC4899, #06B6D4, transparent);
+    background-size: 200% 100%;
+    animation: shimmer 3s linear infinite;
+    border: none;
+    outline: none;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# Helper Functions
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  HELPER FUNCTIONS
+# ─────────────────────────────────────────────────────────────────────────────
 def trigger_rerun():
     try:
         st.rerun()
@@ -215,7 +415,7 @@ def get_cases():
         if res.status_code == 200:
             return res.json()
     except Exception as e:
-        st.error(f"⚠️ Unable to connect to backend API: {e}")
+        st.error(f"⚠️ Unable to connect to backend: {e}")
     return []
 
 def get_case(session_id):
@@ -257,524 +457,889 @@ def run_playbook(session_id, playbook_name):
         pass
     return None
 
-# HTML Badge Builders
-def get_status_badge(status):
-    colors = {
-        "New": ("#1E3A8A", "#93C5FD"),       # Blue
-        "In Progress": ("#7C2D12", "#FDBA74"), # Orange
-        "Remediated": ("#064E3B", "#6EE7B7"),  # Green
-        "Closed": ("#374151", "#D1D5DB"),      # Gray
-    }
-    bg, fg = colors.get(status, ("#1E3A8A", "#93C5FD"))
-    return f'<span style="background-color: {bg}; color: {fg}; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 0.75rem; font-family: \'Space Grotesk\', sans-serif;">{status}</span>'
 
-def get_severity_badge(severity):
-    colors = {
-        "critical": ("#991B1B", "#FCA5A5"),  # Red
-        "high": ("#B45309", "#FCD34D"),      # Amber
-        "medium": ("#78350F", "#FDE68A"),    # Brown
-        "low": ("#065F46", "#A7F3D0"),       # Green
+# ─────────────────────────────────────────────────────────────────────────────
+#  COMPONENT BUILDERS
+# ─────────────────────────────────────────────────────────────────────────────
+def status_badge(status):
+    palette = {
+        "New":         ("rgba(139,92,246,0.18)", "#A78BFA", "◉"),
+        "In Progress": ("rgba(251,146,60,0.18)", "#FB923C", "◎"),
+        "Remediated":  ("rgba(52,211,153,0.18)", "#34D399", "✓"),
+        "Closed":      ("rgba(100,116,139,0.18)", "#94A3B8", "×"),
     }
-    bg, fg = colors.get(str(severity).lower(), ("#1E3A8A", "#93C5FD"))
-    return f'<span style="background-color: {bg}; color: {fg}; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 0.75rem; font-family: \'Space Grotesk\', sans-serif;">{str(severity).upper()}</span>'
+    bg, fg, icon = palette.get(status, ("rgba(139,92,246,0.18)", "#A78BFA", "◉"))
+    return f'<span class="badge" style="background:{bg}; color:{fg}; border: 1px solid {fg}40;">{icon} {status}</span>'
 
-def metric_card(title, value, border_color="#3B82F6"):
+def severity_badge(severity):
+    palette = {
+        "critical": ("rgba(239,68,68,0.18)", "#F87171"),
+        "high":     ("rgba(251,146,60,0.18)", "#FB923C"),
+        "medium":   ("rgba(234,179,8,0.18)", "#EAB308"),
+        "low":      ("rgba(52,211,153,0.18)", "#34D399"),
+    }
+    bg, fg = palette.get(str(severity).lower(), ("rgba(139,92,246,0.18)", "#A78BFA"))
+    return f'<span class="badge" style="background:{bg}; color:{fg}; border: 1px solid {fg}40;">{str(severity).upper()}</span>'
+
+def metric_card_html(label, value, sub="", color="#8B5CF6", icon=""):
     return f"""
-    <div style="background: linear-gradient(145deg, rgba(15, 23, 42, 0.85) 0%, rgba(9, 13, 26, 0.9) 100%); 
-                border: 1px solid rgba(255, 255, 255, 0.05);
-                border-left: 5px solid {border_color};
-                border-radius: 12px; 
-                padding: 18px; 
-                text-align: left; 
-                box-shadow: 0 10px 25px -15px rgba(0, 0, 0, 0.5), 0 0 12px {border_color}1a;
-                backdrop-filter: blur(10px);
-                transition: all 0.3s ease;">
-        <p style="color: #94A3B8; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin: 0; font-family: 'Space Grotesk', sans-serif; letter-spacing: 0.05em;">{title}</p>
-        <h3 style="color: #F8FAFC; margin: 6px 0 0 0; font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.9rem; letter-spacing: -0.01em;">{value}</h3>
+    <div class="metric-card" style="border-color: {color}22;">
+        <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,{color},{color}88);border-radius:14px 14px 0 0;"></div>
+        <div class="label">{icon} {label}</div>
+        <div class="value" style="background:linear-gradient(135deg,{color},{color}CC);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">{value}</div>
+        <div class="sub">{sub}</div>
     </div>
     """
 
-# --- SIDEBAR & NAVIGATION ---
-st.sidebar.markdown("<h2 style='text-align: center; color: #38BDF8; margin-bottom: 0;'>🛡️ AgentShield</h2>", unsafe_allow_html=True)
-st.sidebar.markdown("<p style='text-align: center; color: #64748B; font-size: 0.85rem; margin-top: 0;'>Security & Observability Copilot</p>", unsafe_allow_html=True)
-st.sidebar.markdown("---")
+def score_bar(score, color="#8B5CF6"):
+    pct = min(100, max(0, int(score)))
+    return f"""
+    <div style="margin-top:8px;">
+        <div style="height:6px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden;">
+            <div style="height:100%;width:{pct}%;background:linear-gradient(90deg,{color},{color}CC);border-radius:99px;transition:width 0.8s ease;box-shadow:0 0 8px {color}88;"></div>
+        </div>
+    </div>
+    """
 
-menu = ["📊 Agent Observability", "📋 Case Management Hub", "🔍 Investigation & Playbooks", "🚀 Simulation Console"]
+def shimmer():
+    st.markdown('<div class="shimmer-line"></div>', unsafe_allow_html=True)
 
-# Handle programmatic page switches via session state
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  SIDEBAR NAVIGATION
+# ─────────────────────────────────────────────────────────────────────────────
+# Logo area
+st.sidebar.markdown("""
+<div style="padding: 20px 10px 10px 10px; text-align: center;">
+    <div style="font-size:2.8rem; animation: float 3s ease infinite; display:inline-block;">🛡️</div>
+    <div style="font-family:'Space Grotesk',sans-serif; font-size:1.3rem; font-weight:800;
+                background:linear-gradient(135deg,#8B5CF6,#EC4899,#06B6D4);
+                -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+                letter-spacing:-0.02em; margin-top:4px;">AgentShield</div>
+    <div style="font-size:0.72rem; color:#475569; letter-spacing:0.06em; text-transform:uppercase;
+                font-family:'Space Grotesk',sans-serif; margin-top:2px;">Security Copilot for Splunk</div>
+</div>
+<div class="shimmer-line"></div>
+""", unsafe_allow_html=True)
+
+menu = ["📊 Observability", "📋 Case Hub", "🔍 Investigate", "🚀 Simulate"]
+
 if "navigation_choice" not in st.session_state:
     st.session_state.navigation_choice = menu[0]
 
-# Sidebar nav select box synced with session_state
-choice = st.sidebar.radio("Navigation Menu", menu, index=menu.index(st.session_state.navigation_choice))
+choice = st.sidebar.radio("", menu, index=menu.index(st.session_state.navigation_choice))
 st.session_state.navigation_choice = choice
 
-# --- APP LAYOUT ---
-if choice == "📊 Agent Observability":
-    st.markdown("<h1 style='color: #F3F4F6;'>📊 Agent Observability</h1>", unsafe_allow_html=True)
-    st.write("Real-time telemetry, token analytics, and historical transaction logs of your LLM agents.")
-    st.markdown("---")
-    
-    # Locate log file safely
+# Sidebar footer status
+st.sidebar.markdown("""
+<div style="margin-top:auto; padding:16px 10px; border-top:1px solid rgba(139,92,246,0.1);">
+    <div style="display:flex;align-items:center;gap:8px;font-size:0.78rem;color:#475569;font-family:'Space Grotesk',sans-serif;">
+        <div style="width:8px;height:8px;border-radius:50%;background:#34D399;box-shadow:0 0 6px #34D399;animation:pulse-ring 2s ease infinite;"></div>
+        Backend Connected
+    </div>
+    <div style="font-size:0.7rem;color:#334155;margin-top:4px;">192.168.86.178 · Port 8000</div>
+</div>
+""", unsafe_allow_html=True)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  PAGE: OBSERVABILITY
+# ─────────────────────────────────────────────────────────────────────────────
+if choice == "📊 Observability":
+    st.markdown("""
+    <div style="animation:slide-in-up 0.5s ease;">
+        <h1 style="margin:0;font-size:2rem;background:linear-gradient(135deg,#8B5CF6,#EC4899);
+                   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+            📊 Agent Observability
+        </h1>
+        <p style="color:#475569;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
+            Real-time telemetry · Token analytics · Threat intelligence · Historical baselines
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    shimmer()
+
     log_path = "data/ai_agent_logs.jsonl"
     if not os.path.exists(log_path):
         log_path = "../data/ai_agent_logs.jsonl"
-        
-    try:
-        df = pd.read_json(log_path, lines=True)
-        if not df.empty:
-            col1, col2, col3, col4 = st.columns(4)
-            
-            total_reqs = len(df)
-            avg_latency = df["latency_ms"].mean() if "latency_ms" in df else 0
-            total_cost = df["estimated_cost_usd"].sum() if "estimated_cost_usd" in df else 0
-            avg_quality = df["quality_score"].mean() if "quality_score" in df else 0
-            
-            with col1:
-                st.markdown(metric_card("Total Transactions", f"{total_reqs:,}", "#3B82F6"), unsafe_allow_html=True)
-            with col2:
-                st.markdown(metric_card("Avg Latency", f"{avg_latency:.0f} ms", "#8B5CF6"), unsafe_allow_html=True)
-            with col3:
-                st.markdown(metric_card("Token Spend", f"${total_cost:.4f}", "#10B981"), unsafe_allow_html=True)
-            with col4:
-                st.markdown(metric_card("Avg Response Quality", f"{avg_quality:.2f}/1.0", "#F59E0B"), unsafe_allow_html=True)
-            
-            st.markdown("<h3 style='margin-top: 30px; color: #F3F4F6;'>📈 Historical Usage Patterns</h3>", unsafe_allow_html=True)
-            c1, c2 = st.columns(2)
-            with c1:
-                st.write("**Latency Trend (ms)**")
-                st.line_chart(df["latency_ms"].tail(50))
-            with c2:
-                st.write("**Risk Score Trend**")
-                st.bar_chart(df["risk_score"].tail(50))
-                
-            st.markdown("<h3 style='margin-top: 30px; color: #F3F4F6;'>📋 Recent System Transactions</h3>", unsafe_allow_html=True)
-            st.dataframe(
-                df[["timestamp", "session_id", "user_id", "tool_requested", "risk_type", "risk_score", "severity"]].tail(15),
-                use_container_width=True
-            )
-        else:
-            st.info("💡 No agent transactions detected yet. Go to the **Simulation Console** to generate traffic.")
-    except Exception as e:
-        st.info("💡 No telemetry logs available. Please run some simulations in the **Simulation Console** first.")
 
-elif choice == "📋 Case Management Hub":
-    st.markdown("<h1 style='color: #F3F4F6;'>📋 Case Management Hub</h1>", unsafe_allow_html=True)
-    st.write("Manage active agent security incidents, assign analysts, and trigger automated containment policies.")
-    st.markdown("---")
-    
+    try:
+        df_raw = pd.read_json(log_path, lines=True)
+        # Only keep rows that are actual agent transaction logs (have a prompt field)
+        df = df_raw[df_raw["prompt"].notna()].copy() if "prompt" in df_raw.columns else df_raw.copy()
+
+        if not df.empty:
+            # ── KPI METRICS ──────────────────────────────────────────────────
+            total = len(df)
+            avg_lat = df["latency_ms"].mean() if "latency_ms" in df.columns else 0
+            total_cost = df["estimated_cost_usd"].sum() if "estimated_cost_usd" in df.columns else 0
+            avg_quality = df["quality_score"].mean() if "quality_score" in df.columns else 0
+            threat_count = int((df["severity"].isin(["critical", "high"])).sum()) if "severity" in df.columns else 0
+            blocked_count = int((df["tool_allowed"] == False).sum()) if "tool_allowed" in df.columns else 0
+            avg_risk = df["risk_score"].mean() if "risk_score" in df.columns else 0
+            pii_hits = int(df["pii_detected"].sum()) if "pii_detected" in df.columns else 0
+
+            k1, k2, k3, k4 = st.columns(4)
+            with k1:
+                st.markdown(metric_card_html("Total Requests", f"{total:,}", "All agent transactions", "#8B5CF6", "⚡"), unsafe_allow_html=True)
+            with k2:
+                st.markdown(metric_card_html("Avg Latency", f"{avg_lat:.0f}ms", "p50 response time", "#06B6D4", "⏱"), unsafe_allow_html=True)
+            with k3:
+                st.markdown(metric_card_html("Threat Events", str(threat_count), "Critical + High severity", "#EF4444", "🚨"), unsafe_allow_html=True)
+            with k4:
+                st.markdown(metric_card_html("Token Cost", f"${total_cost:.3f}", "Cumulative spend (USD)", "#10B981", "💰"), unsafe_allow_html=True)
+
+            st.markdown("<br>", unsafe_allow_html=True)
+
+            k5, k6, k7, k8 = st.columns(4)
+            with k5:
+                st.markdown(metric_card_html("Blocked Attempts", str(blocked_count), "Tools disallowed by policy", "#F59E0B", "🚫"), unsafe_allow_html=True)
+            with k6:
+                st.markdown(metric_card_html("Avg Risk Score", f"{avg_risk:.1f}/100", "Mean across all sessions", "#EC4899", "⚠️"), unsafe_allow_html=True)
+            with k7:
+                st.markdown(metric_card_html("PII Detections", str(pii_hits), "Sensitive data exposures", "#F97316", "🔐"), unsafe_allow_html=True)
+            with k8:
+                st.markdown(metric_card_html("Avg Quality", f"{avg_quality:.2f}", "Response quality score", "#34D399", "✨"), unsafe_allow_html=True)
+
+            shimmer()
+
+            # ── CHART ROW 1 ─────────────────────────────────────────────────
+            c1, c2 = st.columns([3, 2])
+
+            with c1:
+                st.markdown("<h3 style='margin:0 0 12px 0;'>📈 Risk Score & Latency Over Time</h3>", unsafe_allow_html=True)
+                plot_df = df.tail(60).reset_index(drop=True)
+                fig = go.Figure()
+                fig.add_trace(go.Scatter(
+                    x=plot_df.index, y=plot_df.get("risk_score", []),
+                    name="Risk Score", fill="tozeroy",
+                    line=dict(color="#EF4444", width=2),
+                    fillcolor="rgba(239,68,68,0.08)"
+                ))
+                fig.add_trace(go.Scatter(
+                    x=plot_df.index, y=plot_df.get("latency_ms", []),
+                    name="Latency (ms)", yaxis="y2",
+                    line=dict(color="#06B6D4", width=1.5, dash="dot"),
+                ))
+                fig.update_layout(
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    font=dict(family="Inter", color="#64748B"),
+                    margin=dict(l=0, r=0, t=10, b=0),
+                    legend=dict(orientation="h", y=1.1, bgcolor="rgba(0,0,0,0)", font=dict(color="#94A3B8")),
+                    xaxis=dict(showgrid=False, zeroline=False, color="#334155"),
+                    yaxis=dict(showgrid=True, gridcolor="rgba(100,116,139,0.08)", color="#334155", title="Risk Score"),
+                    yaxis2=dict(overlaying="y", side="right", showgrid=False, color="#06B6D4", title="Latency (ms)"),
+                    hovermode="x unified",
+                    hoverlabel=dict(bgcolor="#0E0E2C", bordercolor="#8B5CF6", font=dict(family="Inter", color="#E2E8F0"))
+                )
+                st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+            with c2:
+                st.markdown("<h3 style='margin:0 0 12px 0;'>🎯 Severity Breakdown</h3>", unsafe_allow_html=True)
+                if "severity" in df.columns:
+                    sev_counts = df["severity"].value_counts().reset_index()
+                    sev_counts.columns = ["severity", "count"]
+                    color_map = {"critical": "#EF4444", "high": "#F97316", "medium": "#EAB308", "low": "#34D399"}
+                    colors = [color_map.get(s, "#8B5CF6") for s in sev_counts["severity"]]
+                    fig2 = go.Figure(go.Pie(
+                        labels=sev_counts["severity"].str.upper(),
+                        values=sev_counts["count"],
+                        hole=0.68,
+                        marker=dict(colors=colors, line=dict(color="#04051A", width=3)),
+                        textinfo="label+percent",
+                        textfont=dict(family="Space Grotesk", size=11, color="#E2E8F0"),
+                        insidetextorientation="radial",
+                        hovertemplate="<b>%{label}</b><br>Count: %{value}<br>Share: %{percent}<extra></extra>"
+                    ))
+                    fig2.update_layout(
+                        paper_bgcolor="rgba(0,0,0,0)",
+                        plot_bgcolor="rgba(0,0,0,0)",
+                        showlegend=True,
+                        legend=dict(orientation="v", x=1.0, y=0.5, bgcolor="rgba(0,0,0,0)", font=dict(color="#94A3B8", size=10)),
+                        margin=dict(l=0, r=60, t=0, b=0),
+                        annotations=[dict(
+                            text=f"<b>{threat_count}</b><br><span style='font-size:10px'>Threats</span>",
+                            x=0.5, y=0.5, showarrow=False,
+                            font=dict(size=18, color="#F1F5F9", family="Inter")
+                        )]
+                    )
+                    st.plotly_chart(fig2, use_container_width=True, config={"displayModeBar": False})
+
+            shimmer()
+
+            # ── CHART ROW 2 ─────────────────────────────────────────────────
+            c3, c4 = st.columns([2, 3])
+
+            with c3:
+                st.markdown("<h3 style='margin:0 0 12px 0;'>🔥 Risk Type Heatmap</h3>", unsafe_allow_html=True)
+                if "risk_type" in df.columns:
+                    rt = df["risk_type"].fillna("none").value_counts().head(8).reset_index()
+                    rt.columns = ["risk_type", "count"]
+                    fig3 = go.Figure(go.Bar(
+                        x=rt["count"],
+                        y=rt["risk_type"].str.replace("_", " ").str.title(),
+                        orientation="h",
+                        marker=dict(
+                            color=rt["count"],
+                            colorscale=[[0, "#8B5CF622"], [0.5, "#EC489944"], [1, "#EF4444"]],
+                            showscale=False,
+                            line=dict(width=0)
+                        ),
+                        text=rt["count"],
+                        textposition="outside",
+                        textfont=dict(color="#94A3B8", size=11, family="Inter"),
+                        hovertemplate="<b>%{y}</b><br>Occurrences: %{x}<extra></extra>"
+                    ))
+                    fig3.update_layout(
+                        paper_bgcolor="rgba(0,0,0,0)",
+                        plot_bgcolor="rgba(0,0,0,0)",
+                        margin=dict(l=0, r=20, t=0, b=0),
+                        xaxis=dict(showgrid=False, zeroline=False, color="#334155", showticklabels=False),
+                        yaxis=dict(showgrid=False, color="#94A3B8", tickfont=dict(size=11, family="Space Grotesk")),
+                        hoverlabel=dict(bgcolor="#0E0E2C", bordercolor="#EC4899", font=dict(family="Inter", color="#E2E8F0"))
+                    )
+                    st.plotly_chart(fig3, use_container_width=True, config={"displayModeBar": False})
+
+            with c4:
+                st.markdown("<h3 style='margin:0 0 12px 0;'>🧠 Model Performance Matrix</h3>", unsafe_allow_html=True)
+                if all(c in df.columns for c in ["model", "risk_score", "latency_ms", "quality_score"]):
+                    bubble_df = df.groupby("model").agg(
+                        avg_risk=("risk_score", "mean"),
+                        avg_latency=("latency_ms", "mean"),
+                        avg_quality=("quality_score", "mean"),
+                        count=("model", "count")
+                    ).reset_index()
+                    fig4 = go.Figure()
+                    colors_b = ["#8B5CF6", "#EC4899", "#06B6D4", "#34D399", "#F97316"]
+                    for i, row in bubble_df.iterrows():
+                        fig4.add_trace(go.Scatter(
+                            x=[row["avg_latency"]],
+                            y=[row["avg_risk"]],
+                            mode="markers+text",
+                            name=row["model"],
+                            text=[row["model"]],
+                            textposition="top center",
+                            textfont=dict(color="#CBD5E1", size=10, family="Space Grotesk"),
+                            marker=dict(
+                                size=max(14, row["count"] * 4),
+                                color=colors_b[i % len(colors_b)],
+                                opacity=0.85,
+                                line=dict(color="#04051A", width=2)
+                            ),
+                            hovertemplate=f"<b>{row['model']}</b><br>Avg Risk: {row['avg_risk']:.1f}<br>Avg Latency: {row['avg_latency']:.0f}ms<br>Quality: {row['avg_quality']:.2f}<br>Requests: {int(row['count'])}<extra></extra>"
+                        ))
+                    fig4.update_layout(
+                        paper_bgcolor="rgba(0,0,0,0)",
+                        plot_bgcolor="rgba(0,0,0,0)",
+                        showlegend=False,
+                        margin=dict(l=0, r=0, t=0, b=0),
+                        xaxis=dict(showgrid=True, gridcolor="rgba(100,116,139,0.08)", zeroline=False, color="#334155", title="Avg Latency (ms)"),
+                        yaxis=dict(showgrid=True, gridcolor="rgba(100,116,139,0.08)", zeroline=False, color="#334155", title="Avg Risk Score"),
+                        hoverlabel=dict(bgcolor="#0E0E2C", bordercolor="#8B5CF6", font=dict(family="Inter", color="#E2E8F0"))
+                    )
+                    st.plotly_chart(fig4, use_container_width=True, config={"displayModeBar": False})
+
+            shimmer()
+
+            # ── CHART ROW 3: INJECTION SCORE + COST ─────────────────────────
+            c5, c6 = st.columns(2)
+
+            with c5:
+                st.markdown("<h3 style='margin:0 0 12px 0;'>💉 Injection Score Distribution</h3>", unsafe_allow_html=True)
+                if "injection_score" in df.columns:
+                    fig5 = go.Figure(go.Histogram(
+                        x=df["injection_score"],
+                        nbinsx=20,
+                        marker=dict(
+                            color=df["injection_score"],
+                            colorscale=[[0, "#8B5CF622"], [0.5, "#EC489966"], [1, "#EF4444"]],
+                            showscale=False,
+                            line=dict(color="#04051A", width=0.5)
+                        ),
+                        hovertemplate="Injection Score: %{x}<br>Count: %{y}<extra></extra>"
+                    ))
+                    fig5.add_vline(x=70, line_dash="dash", line_color="#EF4444", opacity=0.6,
+                                   annotation_text="Threat Threshold (70)", annotation_font_color="#EF4444",
+                                   annotation_font_size=10)
+                    fig5.update_layout(
+                        paper_bgcolor="rgba(0,0,0,0)",
+                        plot_bgcolor="rgba(0,0,0,0)",
+                        margin=dict(l=0, r=0, t=0, b=0),
+                        xaxis=dict(showgrid=False, zeroline=False, color="#334155", title="Injection Score"),
+                        yaxis=dict(showgrid=True, gridcolor="rgba(100,116,139,0.08)", color="#334155", title="Count"),
+                        hoverlabel=dict(bgcolor="#0E0E2C", bordercolor="#EC4899", font=dict(family="Inter", color="#E2E8F0"))
+                    )
+                    st.plotly_chart(fig5, use_container_width=True, config={"displayModeBar": False})
+
+            with c6:
+                st.markdown("<h3 style='margin:0 0 12px 0;'>💸 Cumulative Cost Trend</h3>", unsafe_allow_html=True)
+                if "estimated_cost_usd" in df.columns:
+                    cost_df = df["estimated_cost_usd"].fillna(0).cumsum().tail(60).reset_index(drop=True)
+                    fig6 = go.Figure(go.Scatter(
+                        x=cost_df.index, y=cost_df.values,
+                        fill="tozeroy",
+                        line=dict(color="#10B981", width=2),
+                        fillcolor="rgba(16,185,129,0.06)",
+                        hovertemplate="Request #%{x}<br>Cumulative Cost: $%{y:.4f}<extra></extra>"
+                    ))
+                    fig6.update_layout(
+                        paper_bgcolor="rgba(0,0,0,0)",
+                        plot_bgcolor="rgba(0,0,0,0)",
+                        margin=dict(l=0, r=0, t=0, b=0),
+                        xaxis=dict(showgrid=False, zeroline=False, color="#334155"),
+                        yaxis=dict(showgrid=True, gridcolor="rgba(100,116,139,0.08)", color="#334155", title="USD"),
+                        hoverlabel=dict(bgcolor="#0E0E2C", bordercolor="#10B981", font=dict(family="Inter", color="#E2E8F0"))
+                    )
+                    st.plotly_chart(fig6, use_container_width=True, config={"displayModeBar": False})
+
+            shimmer()
+
+            # ── RECENT TRANSACTIONS TABLE ────────────────────────────────────
+            st.markdown("<h3 style='margin:0 0 12px 0;'>📋 Recent Transactions</h3>", unsafe_allow_html=True)
+            display_cols = [c for c in ["timestamp", "session_id", "user_id", "model", "tool_requested", "risk_type", "risk_score", "severity", "latency_ms"] if c in df.columns]
+            styled = df[display_cols].tail(15).copy()
+            st.dataframe(styled, use_container_width=True, height=340)
+
+        else:
+            st.info("💡 No agent transactions found. Run simulations in **Simulate** to generate data.")
+    except Exception as e:
+        st.info("💡 No telemetry logs available yet. Head to **Simulate** to generate traffic.")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  PAGE: CASE MANAGEMENT HUB
+# ─────────────────────────────────────────────────────────────────────────────
+elif choice == "📋 Case Hub":
+    st.markdown("""
+    <div style="animation:slide-in-up 0.5s ease;">
+        <h1 style="margin:0;font-size:2rem;background:linear-gradient(135deg,#EC4899,#8B5CF6);
+                   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+            📋 Case Management Hub
+        </h1>
+        <p style="color:#475569;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
+            Active incidents · Analyst assignments · Threat lifecycle management
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    shimmer()
+
     cases = get_cases()
-    
+
     if not cases:
-        st.info("🎉 No active security cases detected. Run simulated attack sessions in the **Simulation Console** to populate incidents.")
+        st.info("🎉 No active security cases. Run attack simulations to populate incidents.")
     else:
-        # 1. Metrics Ribbon
+        # ── KPI STRIP ────────────────────────────────────────────────────────
         total_cases = len(cases)
-        new_cases = sum(1 for c in cases if c.get("status") == "New")
-        in_progress = sum(1 for c in cases if c.get("status") == "In Progress")
-        remediated = sum(1 for c in cases if c.get("status") == "Remediated")
-        closed = sum(1 for c in cases if c.get("status") == "Closed")
-        
+        new_c     = sum(1 for c in cases if c.get("status") == "New")
+        inprog_c  = sum(1 for c in cases if c.get("status") == "In Progress")
+        remed_c   = sum(1 for c in cases if c.get("status") == "Remediated")
+        closed_c  = sum(1 for c in cases if c.get("status") == "Closed")
+        crit_c    = sum(1 for c in cases if str(c.get("severity", "")).lower() == "critical")
+
         m1, m2, m3, m4, m5 = st.columns(5)
-        with m1:
-            st.markdown(metric_card("Total Incidents", str(total_cases), "#6B7280"), unsafe_allow_html=True)
-        with m2:
-            st.markdown(metric_card("New alerts", str(new_cases), "#EF4444"), unsafe_allow_html=True)
-        with m3:
-            st.markdown(metric_card("In Investigation", str(in_progress), "#F59E0B"), unsafe_allow_html=True)
-        with m4:
-            st.markdown(metric_card("Remediated", str(remediated), "#10B981"), unsafe_allow_html=True)
-        with m5:
-            st.markdown(metric_card("Closed", str(closed), "#10B981"), unsafe_allow_html=True)
-            
-        st.markdown("<h3 style='margin-top: 25px; color: #F3F4F6;'>🔍 Incident Filter Center</h3>", unsafe_allow_html=True)
-        
-        # Filters Row
+        with m1: st.markdown(metric_card_html("Total Incidents", str(total_cases), "All active cases", "#8B5CF6", "📦"), unsafe_allow_html=True)
+        with m2: st.markdown(metric_card_html("New / Unread", str(new_c), "Awaiting triage", "#EF4444", "🆕"), unsafe_allow_html=True)
+        with m3: st.markdown(metric_card_html("In Progress", str(inprog_c), "Under investigation", "#F97316", "🔎"), unsafe_allow_html=True)
+        with m4: st.markdown(metric_card_html("Remediated", str(remed_c), "Contained & resolved", "#34D399", "✅"), unsafe_allow_html=True)
+        with m5: st.markdown(metric_card_html("Critical", str(crit_c), "Immediate action needed", "#EC4899", "🚨"), unsafe_allow_html=True)
+
+        shimmer()
+
+        # ── STATUS + SEVERITY MINI-CHARTS ────────────────────────────────────
+        ch1, ch2 = st.columns(2)
+
+        with ch1:
+            st.markdown("<h3 style='margin:0 0 10px;'>Case Status Distribution</h3>", unsafe_allow_html=True)
+            status_data = {"New": new_c, "In Progress": inprog_c, "Remediated": remed_c, "Closed": closed_c}
+            fig_s = go.Figure(go.Bar(
+                x=list(status_data.keys()),
+                y=list(status_data.values()),
+                marker=dict(color=["#A78BFA", "#FB923C", "#34D399", "#64748B"],
+                            line=dict(width=0)),
+                text=list(status_data.values()),
+                textposition="outside",
+                textfont=dict(color="#94A3B8", size=12, family="Inter"),
+                hovertemplate="<b>%{x}</b><br>Cases: %{y}<extra></extra>"
+            ))
+            fig_s.update_layout(
+                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                margin=dict(l=0, r=0, t=10, b=0),
+                xaxis=dict(showgrid=False, zeroline=False, color="#475569"),
+                yaxis=dict(showgrid=True, gridcolor="rgba(100,116,139,0.06)", color="#334155", showticklabels=False),
+                showlegend=False,
+                hoverlabel=dict(bgcolor="#0E0E2C", bordercolor="#8B5CF6", font=dict(family="Inter", color="#E2E8F0"))
+            )
+            st.plotly_chart(fig_s, use_container_width=True, config={"displayModeBar": False})
+
+        with ch2:
+            st.markdown("<h3 style='margin:0 0 10px;'>Severity Spread</h3>", unsafe_allow_html=True)
+            if cases:
+                sev_counter = {}
+                for c in cases:
+                    s = str(c.get("severity", "unknown")).lower()
+                    sev_counter[s] = sev_counter.get(s, 0) + 1
+                sev_labels = list(sev_counter.keys())
+                sev_vals   = list(sev_counter.values())
+                sev_colors = {"critical": "#EF4444", "high": "#F97316", "medium": "#EAB308", "low": "#34D399"}
+                fig_sv = go.Figure(go.Pie(
+                    labels=[l.upper() for l in sev_labels],
+                    values=sev_vals,
+                    hole=0.6,
+                    marker=dict(colors=[sev_colors.get(l, "#8B5CF6") for l in sev_labels],
+                                line=dict(color="#04051A", width=3)),
+                    textinfo="label+value",
+                    textfont=dict(family="Space Grotesk", size=11, color="#E2E8F0"),
+                    hovertemplate="<b>%{label}</b><br>Cases: %{value}<extra></extra>"
+                ))
+                fig_sv.update_layout(
+                    paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                    margin=dict(l=0, r=0, t=0, b=0),
+                    showlegend=False,
+                    annotations=[dict(text=f"<b>{total_cases}</b><br>Cases", x=0.5, y=0.5,
+                                      showarrow=False, font=dict(size=16, color="#F1F5F9", family="Inter"))]
+                )
+                st.plotly_chart(fig_sv, use_container_width=True, config={"displayModeBar": False})
+
+        shimmer()
+
+        # ── FILTERS ──────────────────────────────────────────────────────────
+        st.markdown("<h3 style='margin:0 0 12px;'>🔍 Filter Incidents</h3>", unsafe_allow_html=True)
         f1, f2, f3 = st.columns([1, 1, 2])
         with f1:
-            status_filter = st.selectbox("Filter by Status", ["All", "New", "In Progress", "Remediated", "Closed"])
+            status_filter = st.selectbox("Status", ["All", "New", "In Progress", "Remediated", "Closed"])
         with f2:
-            severity_filter = st.selectbox("Filter by Severity", ["All", "CRITICAL", "HIGH", "MEDIUM", "LOW"])
+            severity_filter = st.selectbox("Severity", ["All", "CRITICAL", "HIGH", "MEDIUM", "LOW"])
         with f3:
-            search_query = st.text_input("Search cases (User ID / Session ID)", "")
-            
-        # Filter Logic
-        filtered_cases = []
+            search_query = st.text_input("Search (Session ID / User ID)", "")
+
+        filtered = []
         for c in cases:
-            if status_filter != "All" and c.get("status") != status_filter:
-                continue
-            if severity_filter != "All" and str(c.get("severity")).upper() != severity_filter:
-                continue
+            if status_filter != "All" and c.get("status") != status_filter: continue
+            if severity_filter != "All" and str(c.get("severity", "")).upper() != severity_filter: continue
             if search_query:
                 q = search_query.lower()
-                user_id = str(c.get("user_id", "")).lower()
-                sess_id = str(c.get("session_id", "")).lower()
-                risk_type = str(c.get("risk_type", "")).lower()
-                if q not in user_id and q not in sess_id and q not in risk_type:
+                if (q not in str(c.get("user_id", "")).lower() and
+                    q not in str(c.get("session_id", "")).lower() and
+                    q not in str(c.get("risk_type", "")).lower()):
                     continue
-            filtered_cases.append(c)
-            
-        if not filtered_cases:
-            st.warning("No incidents match your filter settings.")
+            filtered.append(c)
+
+        if not filtered:
+            st.warning("No incidents match your filter criteria.")
         else:
-            # Custom styled case records table using HTML for exceptional premium feel
-            st.markdown("<br>", unsafe_allow_html=True)
-            
-            # Let's create an elegant grid card system
-            for idx, c in enumerate(filtered_cases):
-                sess_id = c.get("session_id")
-                status = c.get("status")
-                severity = c.get("severity") or "high"
+            st.markdown(f"<p style='color:#475569;font-size:0.85rem;margin:8px 0 12px;'>Showing {len(filtered)} of {total_cases} incidents</p>", unsafe_allow_html=True)
+
+            sev_border = {"critical": "#EF4444", "high": "#F97316", "medium": "#EAB308", "low": "#34D399"}
+
+            for idx, c in enumerate(filtered):
+                sess_id   = c.get("session_id", "unknown")
+                status    = c.get("status", "New")
+                severity  = c.get("severity") or "high"
                 risk_type = c.get("risk_type") or "unknown"
-                user_id = c.get("user_id") or "unknown"
-                score = c.get("risk_score")
-                if score is None:
-                    score = 0
+                user_id   = c.get("user_id") or "unknown"
+                score     = c.get("risk_score") or 0
                 timestamp = c.get("timestamp") or ""
-                
-                severity_colors = {
-                    "critical": "#EF4444",
-                    "high": "#F59E0B",
-                    "medium": "#3B82F6",
-                    "low": "#10B981"
-                }
-                sev_color = severity_colors.get(str(severity).lower(), "#3B82F6")
-                
-                # HTML Container
+                border_c  = sev_border.get(str(severity).lower(), "#8B5CF6")
+
                 st.markdown(f"""
-                <div class="custom-card" style="border-left: 5px solid {sev_color} !important;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
-                        <div>
-                            <span style="font-size: 1.15rem; font-weight: 700; color: #F3F4F6; margin-right: 15px; font-family: 'Space Grotesk', sans-serif;">Case {sess_id}</span>
-                            {get_status_badge(status)}
-                            <span style="margin-left: 10px;"></span>
-                            {get_severity_badge(severity)}
+                <div class="incident-card" style="border-left: 4px solid {border_c};">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px;">
+                        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                            <span style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.05rem;color:#F1F5F9;">
+                                {sess_id}
+                            </span>
+                            {status_badge(status)}
+                            {severity_badge(severity)}
                         </div>
-                        <div style="color: #9CA3AF; font-size: 0.85rem;">
-                            🕒 {timestamp}
-                        </div>
+                        <span style="color:#334155;font-size:0.78rem;font-family:'Space Grotesk',sans-serif;">🕒 {timestamp[:19] if timestamp else '—'}</span>
                     </div>
-                    <div style="margin-top: 12px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; font-size: 0.9rem; color: #9CA3AF;">
-                        <div><strong>Risk Category:</strong> <span style="color: #EF4444; font-weight: 600;">{str(risk_type).upper().replace('_', ' ')}</span></div>
-                        <div><strong>Analyst Assignee:</strong> <span style="color: #60A5FA;">{c.get('assignee') or 'unassigned'}</span></div>
-                        <div><strong>Risk Score:</strong> <span style="color: #F87171; font-weight: 600;">{score}/100</span></div>
-                        <div><strong>User ID:</strong> <span style="color: #E5E7EB;">{user_id}</span></div>
+
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:14px;">
+                        <div>
+                            <div style="font-size:0.68rem;text-transform:uppercase;color:#475569;letter-spacing:0.06em;margin-bottom:3px;">Risk Category</div>
+                            <div style="font-weight:600;color:{border_c};font-size:0.88rem;">{str(risk_type).upper().replace('_', ' ')}</div>
+                        </div>
+                        <div>
+                            <div style="font-size:0.68rem;text-transform:uppercase;color:#475569;letter-spacing:0.06em;margin-bottom:3px;">Analyst</div>
+                            <div style="font-weight:500;color:#A78BFA;font-size:0.88rem;">{c.get('assignee') or 'Unassigned'}</div>
+                        </div>
+                        <div>
+                            <div style="font-size:0.68rem;text-transform:uppercase;color:#475569;letter-spacing:0.06em;margin-bottom:3px;">Risk Score</div>
+                            <div style="font-weight:700;color:#F1F5F9;font-size:0.88rem;">{score}/100</div>
+                            {score_bar(score, border_c)}
+                        </div>
+                        <div>
+                            <div style="font-size:0.68rem;text-transform:uppercase;color:#475569;letter-spacing:0.06em;margin-bottom:3px;">Target User</div>
+                            <div style="font-family:'Fira Code',monospace;color:#CBD5E1;font-size:0.82rem;">{user_id}</div>
+                        </div>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
-                
-                # Render a neat interactive link to inspect
-                col_btn, _ = st.columns([1, 4])
+
+                col_btn, _ = st.columns([1, 5])
                 with col_btn:
-                    if st.button(f"🔍 Investigate Case {sess_id}", key=f"btn_{sess_id}_{idx}"):
+                    if st.button(f"🔍 Investigate", key=f"inv_{sess_id}_{idx}"):
                         st.session_state.selected_case_id = sess_id
-                        st.session_state.navigation_choice = "🔍 Investigation & Playbooks"
+                        st.session_state.navigation_choice = "🔍 Investigate"
                         trigger_rerun()
 
-elif choice == "🔍 Investigation & Playbooks":
-    st.markdown("<h1 style='color: #F3F4F6;'>🔍 Incident Investigation & Playbook Center</h1>", unsafe_allow_html=True)
-    st.write("Conduct full forensics investigations, view detailed prompt-response timelines, and trigger automated mitigation playbooks.")
-    st.markdown("---")
-    
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  PAGE: INVESTIGATION & PLAYBOOKS
+# ─────────────────────────────────────────────────────────────────────────────
+elif choice == "🔍 Investigate":
+    st.markdown("""
+    <div style="animation:slide-in-up 0.5s ease;">
+        <h1 style="margin:0;font-size:2rem;background:linear-gradient(135deg,#06B6D4,#8B5CF6);
+                   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+            🔍 Incident Investigation & Playbook Center
+        </h1>
+        <p style="color:#475569;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
+            Forensic timelines · Prompt analysis · Automated containment playbooks
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    shimmer()
+
     cases = get_cases()
     if not cases:
-        st.info("💡 No active cases loaded. Please run simulations to create cases.")
+        st.info("💡 No cases loaded. Run simulations first.")
     else:
-        # Determine which case is selected
-        all_session_ids = [c.get("session_id") for c in cases]
-        
+        all_ids = [c.get("session_id") for c in cases]
         selected_id = st.session_state.get("selected_case_id")
-        default_index = 0
-        if selected_id in all_session_ids:
-            default_index = all_session_ids.index(selected_id)
-            
-        session_id = st.selectbox("Select Case File to Investigate", all_session_ids, index=default_index)
-        
-        # Save choice back
+        default_idx = all_ids.index(selected_id) if selected_id in all_ids else 0
+
+        session_id = st.selectbox("Select Case", all_ids, index=default_idx,
+                                   format_func=lambda x: f"🗂 {x}")
         st.session_state.selected_case_id = session_id
-        
+
         case_details = get_case(session_id)
-        
+        base_case    = next((c for c in cases if c.get("session_id") == session_id), {})
+
         if case_details:
-            # Let's find base case info from cases list to get risk score and other details
-            base_case = next((c for c in cases if c.get("session_id") == session_id), {})
-            
-            # --- OVERVIEW SUMMARY BAR ---
-            col_sev, col_status, col_assign, col_score = st.columns(4)
-            
-            sev_val = base_case.get("severity") or "unknown"
+            sev_val    = base_case.get("severity") or "unknown"
             status_val = case_details.get("status") or "New"
-            assignee_val = case_details.get("assignee") or "unassigned"
-            
-            risk_score = base_case.get("risk_score")
-            if risk_score is None:
-                risk_score = 0
-                
-            with col_sev:
-                st.markdown(metric_card("Incident Severity", sev_val.upper(), "#EF4444" if sev_val.lower() == "critical" else "#F59E0B"), unsafe_allow_html=True)
-            with col_status:
-                st.markdown(metric_card("Current Lifecycle Status", status_val.upper(), "#10B981" if status_val in ["Remediated", "Closed"] else "#2563EB"), unsafe_allow_html=True)
-            with col_assign:
-                st.markdown(metric_card("Analyst Assignee", assignee_val, "#6B7280" if assignee_val == "unassigned" else "#8B5CF6"), unsafe_allow_html=True)
-            with col_score:
-                st.markdown(metric_card("System Risk Score", f"{risk_score}/100", "#EF4444" if risk_score >= 80 else "#3B82F6"), unsafe_allow_html=True)
-            
-            # Risk Banner warning
+            assign_val = case_details.get("assignee") or "unassigned"
+            risk_score = base_case.get("risk_score") or 0
+            risk_type  = base_case.get("risk_type") or "unknown"
+
+            sev_color  = {"critical": "#EF4444", "high": "#F97316", "medium": "#EAB308", "low": "#34D399"}.get(sev_val.lower(), "#8B5CF6")
+
+            # ── OVERVIEW STRIP ────────────────────────────────────────────────
+            o1, o2, o3, o4 = st.columns(4)
+            with o1: st.markdown(metric_card_html("Severity", sev_val.upper(), "Incident level", sev_color, "⚡"), unsafe_allow_html=True)
+            with o2: st.markdown(metric_card_html("Status", status_val, "Lifecycle stage", "#8B5CF6", "📌"), unsafe_allow_html=True)
+            with o3: st.markdown(metric_card_html("Analyst", assign_val, "Current owner", "#06B6D4", "👤"), unsafe_allow_html=True)
+            with o4: st.markdown(metric_card_html("Risk Score", f"{risk_score}/100", "Threat severity index", sev_color, "🎯"), unsafe_allow_html=True)
+
             if risk_score >= 80:
                 st.markdown(f"""
-                <div style="background-color: rgba(239, 68, 68, 0.1); border: 1px solid #EF4444; border-radius: 6px; padding: 12px; margin-top: 15px;">
-                    <span style="color: #EF4444; font-weight: 700; font-size: 1rem;">🚨 HIGH-RISK INCIDENT ALERT:</span>
-                    <span style="color: #FCA5A5; font-size: 0.95rem;">Risk score of <strong>{risk_score}%</strong> exceeds emergency thresholds. Containment playbook action is strongly recommended.</span>
+                <div class="threat-banner">
+                    <span style="color:#EF4444;font-weight:700;">🚨 CRITICAL THREAT ALERT</span>
+                    <span style="color:#FCA5A5;"> — Risk score <strong>{risk_score}/100</strong> exceeds emergency threshold.
+                    Immediate containment playbook execution is strongly recommended.</span>
                 </div>
                 """, unsafe_allow_html=True)
-                
-            st.markdown("<br>", unsafe_allow_html=True)
-            
-            # Two-Column Layout for Investigation details
-            col_left, col_right = st.columns([1, 1])
-            
-            # --- LEFT COLUMN: TRANSACTION FORENSICS TIMELINE ---
+
+            shimmer()
+
+            col_left, col_right = st.columns([1.1, 0.9])
+
+            # ── LEFT: FORENSIC TIMELINE ──────────────────────────────────────
             with col_left:
-                st.markdown("<h3 style='color: #F3F4F6;'>🔬 Forensic Transaction History</h3>", unsafe_allow_html=True)
-                st.write("Chronological ledger of model prompts, sensitive API calls, and outputs within this session:")
-                
+                st.markdown("<h3 style='margin:0 0 4px;'>🔬 Forensic Transaction Timeline</h3>", unsafe_allow_html=True)
+                st.markdown(f"<p style='color:#475569;font-size:0.82rem;margin:0 0 16px;'>Session: <code>{session_id}</code> · Attack vector: <span style='color:{sev_color};font-weight:600;'>{str(risk_type).upper().replace('_',' ')}</span></p>", unsafe_allow_html=True)
+
                 events = case_details.get("events", [])
+
                 if not events:
-                    st.write("No transaction events found in fallback log. Using session event parameters.")
-                    # Fallback single timeline block
                     st.markdown(f"""
-                    <div class="timeline-container">
-                        <div class="timeline-node">
-                            <div class="timeline-bullet"></div>
-                            <span style="color: #6B7280; font-size: 0.8rem;">{base_case.get('timestamp')}</span>
-                            <p style="margin: 0; color: #F3F4F6; font-weight: 600;">Session Start / Initial Vector</p>
-                            <p style="margin: 0; color: #9CA3AF; font-size: 0.85rem;"><strong>Prompt:</strong> {base_case.get('prompt')}</p>
-                            <p style="margin: 5px 0 0 0; color: #D1D5DB; font-size: 0.85rem;"><strong>Response:</strong> {base_case.get('response')}</p>
-                            <p style="margin: 5px 0 0 0; color: #FCA5A5; font-size: 0.8rem;">⚠️ Tool requested: {base_case.get('tool_requested')}</p>
+                    <div class="tl-container">
+                        <div class="tl-node">
+                            <div class="tl-dot info"></div>
+                            <div style="font-size:0.75rem;color:#475569;margin-bottom:4px;">{base_case.get('timestamp', '')}</div>
+                            <div style="font-weight:600;color:#F1F5F9;margin-bottom:6px;">Initial Session Vector</div>
+                            <div style="background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.15);border-radius:10px;padding:12px;">
+                                <p style="margin:0;color:#94A3B8;font-size:0.83rem;"><strong style='color:#CBD5E1'>Prompt:</strong> {base_case.get('prompt','—')}</p>
+                                <p style="margin:6px 0 0;color:#94A3B8;font-size:0.83rem;"><strong style='color:#CBD5E1'>Response:</strong> {base_case.get('response','—')}</p>
+                                <p style="margin:6px 0 0;color:#FCA5A5;font-size:0.8rem;">⚠️ Tool: <code>{base_case.get('tool_requested','—')}</code></p>
+                            </div>
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
                 else:
-                    st.markdown('<div class="timeline-container">', unsafe_allow_html=True)
+                    st.markdown('<div class="tl-container">', unsafe_allow_html=True)
                     for idx, ev in enumerate(events):
-                        if ev.get("action_taken"):
-                            action = ev.get("action_taken")
-                            message = ev.get("message") or f"Remediation action {action} executed."
-                            ev_sev = ev.get("severity") or "info"
-                            
-                            # Style based on severity of action
-                            bullet_color = "#EF4444" if ev_sev.lower() == "critical" else ("#F59E0B" if ev_sev.lower() == "warning" else "#10B981")
-                            bg_color = "rgba(239, 68, 68, 0.05)" if ev_sev.lower() == "critical" else ("rgba(245, 158, 11, 0.05)" if ev_sev.lower() == "warning" else "rgba(16, 185, 129, 0.05)")
-                            border_color = "rgba(239, 68, 68, 0.15)" if ev_sev.lower() == "critical" else ("rgba(245, 158, 11, 0.15)" if ev_sev.lower() == "warning" else "rgba(16, 185, 129, 0.15)")
-                            
+                        if ev.get("action_taken") and ev.get("action_taken") != "none":
+                            action   = ev.get("action_taken", "")
+                            message  = ev.get("message") or f"Remediation: {action}"
+                            ev_sev   = ev.get("severity") or "info"
+                            dot_cls  = "threat" if ev_sev == "critical" else ("action" if ev_sev in ["warning","info"] else "info")
+                            act_color = "#EF4444" if ev_sev == "critical" else ("#F97316" if ev_sev == "warning" else "#10B981")
+                            act_bg    = f"rgba({{'critical':'239,68,68','warning':'249,115,22','info':'16,185,129'}.get(ev_sev,'16,185,129')},0.06)"
+
                             st.markdown(f"""
-                            <div class="timeline-node">
-                                <div class="timeline-bullet" style="background-color: {bullet_color}; box-shadow: 0 0 8px {bullet_color};"></div>
-                                <span style="color: #9CA3AF; font-size: 0.8rem;">⏱️ Step {idx+1} | {ev.get('timestamp')}</span>
-                                <p style="margin: 3px 0; color: {bullet_color}; font-weight: 700; font-size: 0.95rem;">🛡️ REMEDIATION: {str(action).upper().replace('_', ' ')}</p>
-                                <div style="background: {bg_color}; border-radius: 8px; padding: 12px; margin-top: 5px; border: 1px solid {border_color};">
-                                    <p style="margin: 0; color: #E5E7EB; font-size: 0.88rem; font-family: 'Space Grotesk', sans-serif;">{message}</p>
+                            <div class="tl-node">
+                                <div class="tl-dot {dot_cls}"></div>
+                                <div style="font-size:0.72rem;color:#475569;margin-bottom:4px;">⏱ Step {idx+1} · {ev.get('timestamp','')[:19]}</div>
+                                <div style="font-weight:700;color:{act_color};font-size:0.9rem;margin-bottom:6px;">🛡️ {str(action).upper().replace('_',' ')}</div>
+                                <div style="background:{act_bg};border:1px solid {act_color}22;border-radius:10px;padding:12px;">
+                                    <p style="margin:0;color:#CBD5E1;font-size:0.83rem;">{message}</p>
                                 </div>
                             </div>
                             """, unsafe_allow_html=True)
                         else:
-                            allowed_tag = '<span style="color: #10B981;">[ALLOWED]</span>' if ev.get("tool_allowed") else '<span style="color: #EF4444;">[BLOCKED]</span>'
-                            ev_score = ev.get('risk_score')
-                            if ev_score is None:
-                                ev_score = 0
-                            ev_risk_type = ev.get('risk_type') or "unknown"
-                            ev_model = ev.get('model') or "unknown"
-                            ev_prompt = ev.get('prompt') or "none"
-                            ev_response = ev.get('response') or "none"
-                            ev_tool = ev.get('tool_requested') or "none"
-                            
+                            ev_score    = ev.get("risk_score") or 0
+                            ev_rt       = ev.get("risk_type") or "unknown"
+                            ev_model    = ev.get("model") or "unknown"
+                            ev_prompt   = ev.get("prompt") or "—"
+                            ev_response = ev.get("response") or "—"
+                            ev_tool     = ev.get("tool_requested") or "—"
+                            ev_allowed  = ev.get("tool_allowed")
+                            dot_cls     = "threat" if ev_score >= 80 else "info"
+                            score_c     = "#EF4444" if ev_score >= 80 else "#06B6D4"
+                            allowed_tag = f'<span style="color:#34D399;font-weight:600;">[ALLOWED]</span>' if ev_allowed else f'<span style="color:#EF4444;font-weight:600;">[BLOCKED]</span>'
+
                             st.markdown(f"""
-                            <div class="timeline-node">
-                                <div class="timeline-bullet" style="background-color: {'#EF4444' if ev_score >= 80 else '#38BDF8'}; box-shadow: 0 0 8px {'#EF4444' if ev_score >= 80 else '#38BDF8'};"></div>
-                                <span style="color: #9CA3AF; font-size: 0.8rem;">⏱️ Step {idx+1} | {ev.get('timestamp')}</span>
-                                <p style="margin: 3px 0; color: #F3F4F6; font-weight: 600; font-size: 0.95rem;">Model Transaction ({ev_model})</p>
-                                <div style="background-color: #0F172A; border-radius: 6px; padding: 10px; margin-top: 5px; border: 1px solid #1F2937;">
-                                    <p style="margin: 0; color: #9CA3AF; font-size: 0.85rem;"><strong>User Prompt:</strong> "{ev_prompt}"</p>
-                                    <p style="margin: 5px 0 0 0; color: #E5E7EB; font-size: 0.85rem;"><strong>Agent Response:</strong> "{ev_response}"</p>
+                            <div class="tl-node">
+                                <div class="tl-dot {dot_cls}"></div>
+                                <div style="font-size:0.72rem;color:#475569;margin-bottom:4px;">⏱ Step {idx+1} · {ev.get('timestamp','')[:19]}</div>
+                                <div style="font-weight:600;color:#E2E8F0;font-size:0.9rem;margin-bottom:6px;">
+                                    🤖 Model Transaction
+                                    <span style="font-size:0.75rem;color:#64748B;font-weight:400;margin-left:6px;">via {ev_model}</span>
                                 </div>
-                                <p style="margin: 6px 0 0 0; color: #D1D5DB; font-size: 0.82rem;">⚙️ Sensitive Tool: <code>{ev_tool}</code> {allowed_tag}</p>
-                                <p style="margin: 2px 0 0 0; color: #9CA3AF; font-size: 0.82rem;">🔍 Risk category: <span style="color:#EF4444;">{str(ev_risk_type).upper().replace('_', ' ')}</span> | Score: <strong>{ev_score}/100</strong></p>
+                                <div style="background:rgba(15,15,40,0.7);border:1px solid rgba(139,92,246,0.1);border-radius:10px;padding:12px;">
+                                    <p style="margin:0;color:#94A3B8;font-size:0.82rem;line-height:1.5;"><strong style='color:#CBD5E1'>Prompt:</strong> "{ev_prompt}"</p>
+                                    <p style="margin:8px 0 0;color:#94A3B8;font-size:0.82rem;line-height:1.5;"><strong style='color:#CBD5E1'>Response:</strong> "{ev_response}"</p>
+                                    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:0.78rem;">
+                                        <span>🔧 Tool: <code>{ev_tool}</code> {allowed_tag}</span>
+                                        <span style="color:#64748B;">⚠️ <span style="color:{score_c};font-weight:600;">{str(ev_rt).upper().replace('_',' ')}</span> · {ev_score}/100</span>
+                                    </div>
+                                </div>
                             </div>
                             """, unsafe_allow_html=True)
                     st.markdown('</div>', unsafe_allow_html=True)
-            
-            # --- RIGHT COLUMN: ACTIVE CONTAINMENT PLAYBOOKS & COMMENT FEED ---
+
+            # ── RIGHT: PLAYBOOKS + CONTROLS ──────────────────────────────────
             with col_right:
-                # Part 1: Automated Playbooks Engine
-                st.markdown("<h3 style='color: #F3F4F6;'>🛡️ Active Incident Containment Playbooks</h3>", unsafe_allow_html=True)
-                st.write("Trigger real-time mitigation playbooks. These perform automated system actions, update local vault state, and emit compliance audits to Splunk HEC.")
-                
+                # Playbook Engine
+                st.markdown("<h3 style='margin:0 0 4px;'>🛡️ Containment Playbooks</h3>", unsafe_allow_html=True)
+                st.markdown("<p style='color:#475569;font-size:0.82rem;margin:0 0 14px;'>Automated multi-step remediation · Splunk HEC audit emission</p>", unsafe_allow_html=True)
+
                 playbook_options = [
                     "Playbook A: Severe Prompt Injection Response",
                     "Playbook B: PII / Data Leakage Containment"
                 ]
-                
-                playbook_name = st.selectbox("Select Playbook Action", playbook_options)
-                
-                # Check if this playbook has run previously on this case
-                runs = case_details.get("playbooks_run", [])
+                playbook_name = st.selectbox("Select Playbook", playbook_options)
+
+                runs     = case_details.get("playbooks_run", [])
                 past_run = next((r for r in runs if r.get("playbook_name") == playbook_name), None)
-                
+
                 if past_run:
-                    st.success(f"✅ This playbook was successfully executed on {past_run.get('timestamp')}.")
-                    with st.expander("View Past Playbook Execution Audit Logs"):
+                    st.markdown(f"""
+                    <div style="background:rgba(52,211,153,0.07);border:1px solid rgba(52,211,153,0.25);
+                                border-radius:10px;padding:12px 14px;margin-bottom:12px;">
+                        <span style="color:#34D399;font-weight:700;">✓ Previously Executed</span>
+                        <span style="color:#6EE7B7;font-size:0.82rem;"> · {past_run.get('timestamp', '')[:19]}</span>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    with st.expander("View Past Execution Logs"):
                         for line in past_run.get("log", []):
-                            st.code(line)
-                            
-                execute_btn = st.button("🔥 Execute Automated Playbook", type="primary", use_container_width=True)
-                
-                if execute_btn:
-                    with st.status(f"Running automated containment playbook: '{playbook_name}'...", expanded=True) as status_box:
-                        
-                        # Phase 1: Trigger the backend execution
-                        st.write("📡 Dispatched execution payload to security API gateway...")
+                            st.code(line, language=None)
+
+                if st.button("🔥 Execute Playbook", type="primary", use_container_width=True):
+                    with st.status(f"Executing: {playbook_name}...", expanded=True) as sb:
+                        st.write("📡 Dispatching to security API gateway...")
                         res_data = run_playbook(session_id, playbook_name)
-                        
                         if not res_data or res_data.get("status") != "success":
-                            st.error("❌ Playbook execution failed on API server!")
-                            status_box.update(label="Playbook failed to execute", state="error")
+                            st.error("❌ Playbook failed on API server.")
+                            sb.update(label="Playbook failed", state="error")
                         else:
-                            logs = res_data.get("log", [])
-                            
-                            # Phase 2: Animate progress step-by-step for full visual feedback to the security analyst
-                            for line in logs:
-                                time.sleep(0.7)  # Brief delay to make the checkbox progression visible
-                                if "Step 1/4" in line:
-                                    st.write("🛡️ **Step 1/4 Completed:** Quarantined active LLM agent session state.")
+                            for line in res_data.get("log", []):
+                                time.sleep(0.6)
+                                if "Step 1/4" in line: st.write("🛡️ **Step 1/4** — Session quarantined.")
                                 elif "Step 2/4" in line:
-                                    if "Playbook A" in playbook_name:
-                                        st.write("🚫 **Step 2/4 Completed:** Automated security policy: Disabled tool `crm.export_all_customers`.")
-                                    else:
-                                        st.write("📁 **Step 2/4 Completed:** Log quarantine executed. Compromised session historical index isolated in vault.")
+                                    if "Playbook A" in playbook_name: st.write("🚫 **Step 2/4** — Tool `crm.export_all_customers` disabled.")
+                                    else: st.write("📁 **Step 2/4** — PII session log isolated in vault.")
                                 elif "Step 3/4" in line:
-                                    if "Playbook A" in playbook_name:
-                                        st.write("👤 **Step 3/4 Completed:** Suspicious User ID flagged for administrative block.")
-                                    else:
-                                        st.write("🔒 **Step 3/4 Completed:** Secure compliance webhook triggered with encrypted payload.")
+                                    if "Playbook A" in playbook_name: st.write("👤 **Step 3/4** — Suspicious user flagged for admin review.")
+                                    else: st.write("🔒 **Step 3/4** — Encrypted compliance webhook dispatched.")
                                 elif "Step 4/4" in line:
-                                    if "Playbook A" in playbook_name:
-                                        st.write("📊 **Step 4/4 Completed:** Emitted Critical Security Alert to Splunk index `security_alerts` via HEC.")
-                                    else:
-                                        st.write("🧩 **Step 4/4 Completed:** Pushed reinforced context security prompt to live model profiles.")
-                                elif "ERROR" in line:
-                                    st.error(line)
-                                else:
-                                    st.write(line)
-                            
-                            # Complete
-                            status_box.update(label="Containment Playbook Action Complete", state="complete")
-                            st.success("🎉 Playbook execution successfully finished! Case updated.")
-                            
-                            # Force a brief delay and rerun to refresh state
-                            time.sleep(1.0)
-                            trigger_rerun()
-                            
-                st.markdown("<hr style='margin: 25px 0;'>", unsafe_allow_html=True)
-                
-                # Part 2: Case Details Control & Analyst Sandbox
-                st.markdown("<h3 style='color: #F3F4F6;'>🔧 Analyst Lifecycle & Controls</h3>", unsafe_allow_html=True)
-                
-                # Status Change Select box
-                status_list = ["New", "In Progress", "Remediated", "Closed"]
-                current_status_idx = status_list.index(case_details.get("status", "New"))
-                new_status = st.selectbox("Update Case Lifecycle Status", status_list, index=current_status_idx)
-                
-                if new_status != case_details.get("status"):
-                    if update_status(session_id, new_status):
-                        st.success(f"Case status updated to '{new_status}'")
-                        time.sleep(0.5)
-                        trigger_rerun()
-                        
-                # Assignee Selection
-                assignee_list = ["unassigned", "ajith", "analyst_b", "compliance_officer"]
-                current_assign_idx = assignee_list.index(case_details.get("assignee", "unassigned"))
-                new_assignee = st.selectbox("Reassign Security Analyst", assignee_list, index=current_assign_idx)
-                
-                if new_assignee != case_details.get("assignee"):
-                    if update_assignee(session_id, new_assignee):
-                        st.success(f"Case assigned to '{new_assignee}'")
-                        time.sleep(0.5)
-                        trigger_rerun()
-                
-                st.markdown("<h4 style='margin-top: 20px; color: #F3F4F6;'>💬 Forensic Notes & Analyst Comments</h4>", unsafe_allow_html=True)
-                
-                # Display comment feed
-                comments = case_details.get("comments", [])
-                if not comments:
-                    st.write("No analyst comments on this case yet.")
-                else:
-                    for comm in reversed(comments):
-                        timestamp = comm.get("timestamp", "")
-                        author = comm.get("author", "System")
-                        message = comm.get("message", "")
-                        
-                        # System actions styled differently
-                        border_col = "#3B82F6" if author == "System" else "#8B5CF6"
-                        bg_col = "#1E293B" if author == "System" else "#111827"
-                        
-                        st.markdown(f"""
-                        <div class="comment-card" style="border-left: 4px solid {border_col}; background-color: {bg_col};">
-                            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #9CA3AF; margin-bottom: 5px;">
-                                <strong>👤 {author}</strong>
-                                <span>⏱️ {timestamp}</span>
-                            </div>
-                            <p style="margin: 0; font-size: 0.88rem; color: #E5E7EB;">{message}</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                        
-                # Comment Form
-                with st.form("comment_form", clear_on_submit=True):
-                    new_msg = st.text_area("Add Investigation Note / Incident Update:", placeholder="Type a new comment...")
-                    submit_comm = st.form_submit_button("Add Note to Case File")
-                    
-                    if submit_comm and new_msg.strip():
-                        if add_comment(session_id, "ajith", new_msg.strip()):
-                            st.success("Note added successfully.")
-                            time.sleep(0.5)
+                                    if "Playbook A" in playbook_name: st.write("📊 **Step 4/4** — Critical alert emitted to Splunk `security_alerts`.")
+                                    else: st.write("🧩 **Step 4/4** — Reinforced LLM system prompt policy applied.")
+                                elif "ERROR" in line: st.error(line)
+                            sb.update(label="✅ Playbook Execution Complete", state="complete")
+                            time.sleep(1)
                             trigger_rerun()
 
-elif choice == "🚀 Simulation Console":
-    st.markdown("<h1 style='color: #F3F4F6;'>🚀 Agent Threat Simulation Console</h1>", unsafe_allow_html=True)
-    st.write("Generate high-fidelity, synthetic transactions for the `support-refund-agent` to test telemetry ingest and playbook triggers.")
-    st.markdown("---")
-    
-    col_normal, col_attack = st.columns(2)
-    
-    with col_normal:
+                shimmer()
+
+                # Lifecycle Controls
+                st.markdown("<h3 style='margin:0 0 12px;'>🔧 Analyst Controls</h3>", unsafe_allow_html=True)
+
+                status_list = ["New", "In Progress", "Remediated", "Closed"]
+                cur_status_idx = status_list.index(case_details.get("status", "New"))
+                new_status = st.selectbox("Lifecycle Status", status_list, index=cur_status_idx)
+                if new_status != case_details.get("status"):
+                    if update_status(session_id, new_status):
+                        st.success(f"Status → {new_status}")
+                        time.sleep(0.4)
+                        trigger_rerun()
+
+                assignee_list = ["unassigned", "ajith", "analyst_b", "compliance_officer"]
+                cur_assign_idx = assignee_list.index(case_details.get("assignee", "unassigned"))
+                new_assignee = st.selectbox("Assign Analyst", assignee_list, index=cur_assign_idx)
+                if new_assignee != case_details.get("assignee"):
+                    if update_assignee(session_id, new_assignee):
+                        st.success(f"Assigned to {new_assignee}")
+                        time.sleep(0.4)
+                        trigger_rerun()
+
+                shimmer()
+
+                # Comment feed
+                st.markdown("<h4 style='margin:0 0 10px;'>💬 Investigation Notes</h4>", unsafe_allow_html=True)
+                comments = case_details.get("comments", [])
+                if not comments:
+                    st.markdown("<p style='color:#334155;font-size:0.85rem;'>No notes yet.</p>", unsafe_allow_html=True)
+                else:
+                    for comm in reversed(comments[-6:]):
+                        author  = comm.get("author", "System")
+                        msg     = comm.get("message", "")
+                        ts      = comm.get("timestamp", "")[:19]
+                        bc      = "#8B5CF6" if author == "System" else "#06B6D4"
+                        st.markdown(f"""
+                        <div class="comment-card" style="border-left-color:{bc};">
+                            <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:#475569;margin-bottom:6px;">
+                                <strong style="color:{bc};">{'⚙️' if author=='System' else '👤'} {author}</strong>
+                                <span>{ts}</span>
+                            </div>
+                            <p style="margin:0;font-size:0.84rem;color:#CBD5E1;">{msg}</p>
+                        </div>
+                        """, unsafe_allow_html=True)
+
+                with st.form("comment_form", clear_on_submit=True):
+                    new_msg = st.text_area("Add Note", placeholder="Enter investigation note or analyst update...")
+                    if st.form_submit_button("📝 Add Note"):
+                        if new_msg.strip() and add_comment(session_id, "ajith", new_msg.strip()):
+                            st.success("Note added.")
+                            time.sleep(0.4)
+                            trigger_rerun()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  PAGE: SIMULATION CONSOLE
+# ─────────────────────────────────────────────────────────────────────────────
+elif choice == "🚀 Simulate":
+    st.markdown("""
+    <div style="animation:slide-in-up 0.5s ease;">
+        <h1 style="margin:0;font-size:2rem;background:linear-gradient(135deg,#34D399,#06B6D4);
+                   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+            🚀 Threat Simulation Console
+        </h1>
+        <p style="color:#475569;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
+            Generate synthetic agent traffic · Test detection pipelines · Validate playbook triggers
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    shimmer()
+
+    col_norm, col_atk = st.columns(2)
+
+    with col_norm:
         st.markdown("""
-        <div class="custom-card" style="border-top: 4px solid #10B981; height: 260px;">
-            <h3 style="color: #10B981; margin: 0 0 10px 0;">🟢 Normal Agent Transaction</h3>
-            <p style="color: #9CA3AF; font-size: 0.9rem;">Simulates a standard, low-risk user query asking for order statuses or general customer service support. This creates baseline metrics for analysis.</p>
-            <p style="color: #9CA3AF; font-size: 0.85rem;"><strong>Primary tool invoked:</strong> <code>order.check_status</code></p>
+        <div class="shield-card" style="border-color:rgba(52,211,153,0.2);min-height:240px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+                <div style="width:10px;height:10px;border-radius:50%;background:#34D399;box-shadow:0 0 10px #34D399;"></div>
+                <h3 style="margin:0;color:#34D399;font-size:1.1rem;">Normal Agent Transaction</h3>
+            </div>
+            <p style="color:#475569;font-size:0.88rem;line-height:1.6;margin:0 0 12px;">
+                Simulates a standard, benign customer service query requesting order status.
+                Creates legitimate baseline telemetry for anomaly detection calibration.
+            </p>
+            <div style="background:rgba(52,211,153,0.06);border:1px solid rgba(52,211,153,0.15);border-radius:8px;padding:10px 12px;">
+                <span style="font-size:0.75rem;color:#475569;font-family:'Space Grotesk',sans-serif;text-transform:uppercase;letter-spacing:0.05em;">Tool Invoked</span><br>
+                <code>order.check_status</code>
+                <span style="margin-left:10px;font-size:0.75rem;color:#34D399;">Risk: LOW · Score: &lt;20</span>
+            </div>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("Simulate Normal Transaction", type="primary", use_container_width=True):
-            with st.spinner("Emitting normal event..."):
-                res = requests.post(f"{API_URL}/simulate/normal")
-                if res.status_code == 200:
-                    st.success("✅ Transaction successfully logged to local log & Splunk HEC!")
-                    st.json(res.json()["event"])
-                else:
-                    st.error("Execution failed.")
-                    
-    with col_attack:
+        if st.button("▶ Run Normal Transaction", use_container_width=True):
+            with st.spinner("Emitting normal event to pipeline..."):
+                try:
+                    res = requests.post(f"{API_URL}/simulate/normal", timeout=8)
+                    if res.status_code == 200:
+                        st.success("✅ Transaction logged · Splunk HEC confirmed · Baseline updated")
+                        with st.expander("Event Payload"):
+                            st.json(res.json().get("event", {}))
+                    else:
+                        st.error("Simulation endpoint returned error.")
+                except Exception as e:
+                    st.error(f"Connection error: {e}")
+
+    with col_atk:
         st.markdown("""
-        <div class="custom-card" style="border-top: 4px solid #EF4444; height: 260px;">
-            <h3 style="color: #EF4444; margin: 0 0 10px 0;">🔴 High-Risk Attack Session</h3>
-            <p style="color: #9CA3AF; font-size: 0.9rem;">Triggers an malicious user prompt injection aiming to execute sensitive bulk actions, retrieve database dumps, or leak PII information.</p>
-            <p style="color: #9CA3AF; font-size: 0.85rem;"><strong>Sensitive tool targeted:</strong> <code>crm.export_all_customers</code></p>
+        <div class="shield-card" style="border-color:rgba(239,68,68,0.2);min-height:240px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+                <div style="width:10px;height:10px;border-radius:50%;background:#EF4444;box-shadow:0 0 10px #EF4444;animation:glow-red 2s ease infinite;"></div>
+                <h3 style="margin:0;color:#EF4444;font-size:1.1rem;">High-Risk Attack Session</h3>
+            </div>
+            <p style="color:#475569;font-size:0.88rem;line-height:1.6;margin:0 0 12px;">
+                Injects a malicious prompt designed to bypass guardrails and trigger bulk CRM data exfiltration.
+                Tests detection accuracy, HEC ingestion, and auto-case creation.
+            </p>
+            <div style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.15);border-radius:8px;padding:10px 12px;">
+                <span style="font-size:0.75rem;color:#475569;font-family:'Space Grotesk',sans-serif;text-transform:uppercase;letter-spacing:0.05em;">Targeted Tool</span><br>
+                <code>crm.export_all_customers</code>
+                <span style="margin-left:10px;font-size:0.75rem;color:#EF4444;">Risk: CRITICAL · Score: 80+</span>
+            </div>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("Simulate Attack Session", type="primary", use_container_width=True):
-            with st.spinner("Emitting high-risk event..."):
-                res = requests.post(f"{API_URL}/simulate/attack")
-                if res.status_code == 200:
-                    st.error("🚨 CRITICAL ALERT: Malicious transaction detected!")
-                    st.json(res.json()["event"])
-                else:
-                    st.error("Execution failed.")
+        if st.button("⚡ Launch Attack Simulation", type="primary", use_container_width=True):
+            with st.spinner("Injecting malicious payload..."):
+                try:
+                    res = requests.post(f"{API_URL}/simulate/attack", timeout=8)
+                    if res.status_code == 200:
+                        st.error("🚨 CRITICAL: Malicious transaction detected and logged!")
+                        with st.expander("Threat Event Payload"):
+                            st.json(res.json().get("event", {}))
+                        st.info("💡 Check **Case Hub** to see the auto-created incident.")
+                    else:
+                        st.error("Simulation failed.")
+                except Exception as e:
+                    st.error(f"Connection error: {e}")
+
+    shimmer()
+
+    # Pipeline architecture diagram
+    st.markdown("<h3 style='margin:0 0 14px;'>🏗️ Detection Pipeline Architecture</h3>", unsafe_allow_html=True)
+    st.markdown("""
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:8px;">
+        <div style="background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.2);border-radius:12px;padding:16px;text-align:center;">
+            <div style="font-size:1.8rem;margin-bottom:6px;">🤖</div>
+            <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:0.85rem;color:#A78BFA;">LLM Agent</div>
+            <div style="font-size:0.72rem;color:#475569;margin-top:3px;">support-refund-agent</div>
+        </div>
+        <div style="background:rgba(6,182,212,0.08);border:1px solid rgba(6,182,212,0.2);border-radius:12px;padding:16px;text-align:center;">
+            <div style="font-size:1.8rem;margin-bottom:6px;">🔍</div>
+            <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:0.85rem;color:#06B6D4;">Risk Scorer</div>
+            <div style="font-size:0.72rem;color:#475569;margin-top:3px;">AgentShield Engine</div>
+        </div>
+        <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:12px;padding:16px;text-align:center;">
+            <div style="font-size:1.8rem;margin-bottom:6px;">📡</div>
+            <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:0.85rem;color:#34D399;">Splunk HEC</div>
+            <div style="font-size:0.72rem;color:#475569;margin-top:3px;">Port 8088 · ai_agent_logs</div>
+        </div>
+        <div style="background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.2);border-radius:12px;padding:16px;text-align:center;">
+            <div style="font-size:1.8rem;margin-bottom:6px;">📊</div>
+            <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:0.85rem;color:#A78BFA;">Case Engine</div>
+            <div style="font-size:0.72rem;color:#475569;margin-top:3px;">Auto-creates incidents</div>
+        </div>
+        <div style="background:rgba(236,72,153,0.08);border:1px solid rgba(236,72,153,0.2);border-radius:12px;padding:16px;text-align:center;">
+            <div style="font-size:1.8rem;margin-bottom:6px;">🛡️</div>
+            <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:0.85rem;color:#EC4899;">Playbook Engine</div>
+            <div style="font-size:0.72rem;color:#475569;margin-top:3px;">Automated containment</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
