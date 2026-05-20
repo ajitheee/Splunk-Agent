@@ -1077,7 +1077,8 @@ elif choice == "🔍 Investigate":
                             ev_sev   = ev.get("severity") or "info"
                             dot_cls  = "threat" if ev_sev == "critical" else ("action" if ev_sev in ["warning","info"] else "info")
                             act_color = "#EF4444" if ev_sev == "critical" else ("#F97316" if ev_sev == "warning" else "#10B981")
-                            act_bg    = f"rgba({{'critical':'239,68,68','warning':'249,115,22','info':'16,185,129'}.get(ev_sev,'16,185,129')},0.06)"
+                            act_rgb = "239,68,68" if ev_sev == "critical" else ("249,115,22" if ev_sev == "warning" else "16,185,129")
+                            act_bg = f"rgba({act_rgb},0.06)"
 
                             st.markdown(f"""
                             <div class="tl-node">
