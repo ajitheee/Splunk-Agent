@@ -7,7 +7,7 @@ import time
 import datetime
 import plotly.graph_objects as go
 
-API_URL = "http://localhost:8000"
+API_URL = os.environ.get("API_URL", "http://localhost:8000")
 
 st.set_page_config(
     page_title="AgentShield for Splunk",
