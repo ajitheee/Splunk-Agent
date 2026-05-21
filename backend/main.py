@@ -3,7 +3,17 @@ from pydantic import BaseModel
 import os
 import json
 from .hec_sender import send_event_to_splunk
-from agent_app.simulator import generate_normal_event, generate_attack_event
+from agent_app.simulator import (
+    generate_normal_event,
+    generate_attack_event,
+    generate_hallucination_event,
+    generate_cost_spike_event,
+    MODEL_PROFILES,
+)
+from .hallucination_checker import check_hallucination
+from .policy_engine import load_policies, save_policies, evaluate_event
+from .budget_monitor import check_and_update_budget, get_budget_summary, load_budget_config, save_budget_config, reset_budget_state
+from .baseline_engine import compute_baselines, check_anomalies, get_baseline_report
 import datetime
 
 app = FastAPI(title="AgentShield API")
@@ -45,46 +55,95 @@ class CaseCommentRequest(BaseModel):
 class PlaybookExecuteRequest(BaseModel):
     playbook_name: str
 
+class PolicyToggleRequest(BaseModel):
+    enabled: bool
+
+class BudgetConfigRequest(BaseModel):
+    per_session_token_limit: int = None
+    per_session_cost_limit_usd: float = None
+    daily_cost_limit_usd: float = None
+    daily_token_limit: int = None
+    alert_threshold_pct: int = None
+
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+
+def _enrich_and_send(event: dict, span) -> dict:
+    """Apply V4/V5 enrichment (hallucination, policy, budget, baseline) then send to Splunk."""
+    # V4: Hallucination check
+    h = check_hallucination(
+        event.get("prompt", ""),
+        event.get("response", ""),
+        event.get("quality_score", 1.0),
+        event.get("injection_score", 0),
+    )
+    event.update(h)
+
+    # V4: Policy evaluation
+    policy_hits = evaluate_event(event)
+    event["policy_violations"] = [p["policy_id"] for p in policy_hits]
+    if policy_hits:
+        worst = max(policy_hits, key=lambda p: {"critical": 4, "high": 3, "medium": 2, "low": 1}.get(p["severity_override"], 0))
+        event["policy_action"] = worst["action"]
+
+    # V5: Budget check
+    budget_result = check_and_update_budget(event)
+    event["budget_violations"] = [v["type"] for v in budget_result["violations"]]
+    event["session_tokens_total"] = budget_result["session_tokens"]
+    event["session_cost_total_usd"] = budget_result["session_cost_usd"]
+
+    # V5: Baseline anomaly check
+    baselines = compute_baselines(event.get("agent_name"))
+    anomalies = check_anomalies(event, baselines)
+    event["baseline_anomalies"] = [a["metric"] for a in anomalies]
+
+    send_event_to_splunk(event)
+
+    span.set_attribute("gen_ai.system", event.get("agent_name", ""))
+    span.set_attribute("gen_ai.request.model", event.get("model", ""))
+    span.set_attribute("gen_ai.usage.input_tokens", event.get("tokens_prompt", 0))
+    span.set_attribute("gen_ai.usage.output_tokens", event.get("tokens_completion", 0))
+    span.set_attribute("user.id", event.get("user_id", ""))
+    span.set_attribute("session.id", event.get("session_id", ""))
+    span.set_attribute("risk.score", event.get("risk_score", 0))
+    span.set_attribute("hallucination.score", event.get("hallucination_score", 0))
+    span.set_attribute("policy.violations", str(event.get("policy_violations", [])))
+
+    return event
+
 
 @app.post("/simulate/normal")
 def simulate_normal():
     with tracer.start_as_current_span("agent_session") as span:
         event = generate_normal_event()
-        send_event_to_splunk(event)
-        
-        span.set_attribute("gen_ai.system", event.get("agent_name", ""))
-        span.set_attribute("gen_ai.request.model", event.get("model", ""))
-        span.set_attribute("gen_ai.usage.input_tokens", event.get("tokens_prompt", 0))
-        span.set_attribute("gen_ai.usage.output_tokens", event.get("tokens_completion", 0))
-        span.set_attribute("user.id", event.get("user_id", ""))
-        span.set_attribute("session.id", event.get("session_id", ""))
-        span.set_attribute("gen_ai.prompt", event.get("prompt", ""))
-        span.set_attribute("gen_ai.completion", event.get("response", ""))
-        span.set_attribute("tool.requested", event.get("tool_requested", ""))
-        span.set_attribute("risk.score", event.get("risk_score", 0))
-        
+        event = _enrich_and_send(event, span)
     return {"status": "success", "event": event}
+
 
 @app.post("/simulate/attack")
 def simulate_attack():
     with tracer.start_as_current_span("agent_session") as span:
         event = generate_attack_event()
-        send_event_to_splunk(event)
+        event = _enrich_and_send(event, span)
+    return {"status": "success", "event": event}
 
-        span.set_attribute("gen_ai.system", event.get("agent_name", ""))
-        span.set_attribute("gen_ai.request.model", event.get("model", ""))
-        span.set_attribute("gen_ai.usage.input_tokens", event.get("tokens_prompt", 0))
-        span.set_attribute("gen_ai.usage.output_tokens", event.get("tokens_completion", 0))
-        span.set_attribute("user.id", event.get("user_id", ""))
-        span.set_attribute("session.id", event.get("session_id", ""))
-        span.set_attribute("gen_ai.prompt", event.get("prompt", ""))
-        span.set_attribute("gen_ai.completion", event.get("response", ""))
-        span.set_attribute("tool.requested", event.get("tool_requested", ""))
-        span.set_attribute("risk.score", event.get("risk_score", 0))
-        
+
+@app.post("/simulate/hallucination")
+def simulate_hallucination():
+    """V4: Simulate a high-hallucination-risk event."""
+    with tracer.start_as_current_span("agent_session") as span:
+        event = generate_hallucination_event()
+        event = _enrich_and_send(event, span)
+    return {"status": "success", "event": event}
+
+
+@app.post("/simulate/cost-spike")
+def simulate_cost_spike():
+    """V5: Simulate a token/cost spike to trigger budget violations."""
+    with tracer.start_as_current_span("agent_session") as span:
+        event = generate_cost_spike_event()
+        event = _enrich_and_send(event, span)
     return {"status": "success", "event": event}
 
 CASES_FILE = os.path.join(os.path.dirname(FALLBACK_LOG_FILE), "cases.json")
@@ -487,3 +546,161 @@ def execute_playbook(session_id: str, req: PlaybookExecuteRequest):
     
     save_cases(cases)
     return {"status": "success", "playbook_status": playbook_status, "log": execution_logs}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  V4: POLICY-AS-CODE ENDPOINTS
+# ─────────────────────────────────────────────────────────────────────────────
+
+@app.get("/policies")
+def list_policies():
+    return load_policies()
+
+
+@app.post("/policies/{policy_id}/toggle")
+def toggle_policy(policy_id: str, req: PolicyToggleRequest):
+    policies = load_policies()
+    for p in policies:
+        if p["id"] == policy_id:
+            p["enabled"] = req.enabled
+            save_policies(policies)
+            return {"status": "success", "policy": p}
+    raise HTTPException(status_code=404, detail="Policy not found")
+
+
+@app.post("/policies/evaluate")
+def evaluate_policy(event: dict):
+    """Evaluate an arbitrary event payload against all policies (for testing)."""
+    triggered = evaluate_event(event)
+    return {"triggered": triggered, "count": len(triggered)}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  V4: HALLUCINATION CHECK ENDPOINT
+# ─────────────────────────────────────────────────────────────────────────────
+
+@app.post("/hallucination/check")
+def hallucination_check(payload: dict):
+    result = check_hallucination(
+        payload.get("prompt", ""),
+        payload.get("response", ""),
+        payload.get("quality_score", 1.0),
+        payload.get("injection_score", 0),
+    )
+    return result
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  V5: BUDGET MONITOR ENDPOINTS
+# ─────────────────────────────────────────────────────────────────────────────
+
+@app.get("/budget")
+def budget_summary():
+    return get_budget_summary()
+
+
+@app.post("/budget/config")
+def update_budget_config(req: BudgetConfigRequest):
+    config = load_budget_config()
+    budgets = config.get("budgets", {})
+    if req.per_session_token_limit is not None:
+        budgets["per_session_token_limit"] = req.per_session_token_limit
+    if req.per_session_cost_limit_usd is not None:
+        budgets["per_session_cost_limit_usd"] = req.per_session_cost_limit_usd
+    if req.daily_cost_limit_usd is not None:
+        budgets["daily_cost_limit_usd"] = req.daily_cost_limit_usd
+    if req.daily_token_limit is not None:
+        budgets["daily_token_limit"] = req.daily_token_limit
+    if req.alert_threshold_pct is not None:
+        budgets["alert_threshold_pct"] = req.alert_threshold_pct
+    config["budgets"] = budgets
+    save_budget_config(config)
+    return {"status": "success", "config": budgets}
+
+
+@app.post("/budget/reset")
+def reset_budget():
+    return reset_budget_state()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  V5: BEHAVIORAL BASELINES ENDPOINTS
+# ─────────────────────────────────────────────────────────────────────────────
+
+@app.get("/baselines")
+def baselines():
+    return get_baseline_report()
+
+
+@app.get("/baselines/{agent_name}")
+def baselines_for_agent(agent_name: str):
+    b = compute_baselines(agent_name)
+    if not b:
+        raise HTTPException(status_code=404, detail="Insufficient data to compute baselines for this agent")
+    return {"agent_name": agent_name, "baselines": b}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  V5: MODEL ARENA ENDPOINT
+# ─────────────────────────────────────────────────────────────────────────────
+
+@app.get("/model-arena")
+def model_arena():
+    """Return per-model performance stats for the Model Arena visualization."""
+    if not os.path.exists(FALLBACK_LOG_FILE):
+        return {"models": []}
+
+    events = []
+    with open(FALLBACK_LOG_FILE, "r") as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                try:
+                    e = json.loads(line)
+                    if e.get("prompt"):
+                        events.append(e)
+                except Exception:
+                    pass
+
+    model_stats: dict = {}
+    for e in events:
+        m = e.get("model")
+        if not m:
+            continue
+        if m not in model_stats:
+            model_stats[m] = {
+                "model": m,
+                "count": 0,
+                "latency_sum": 0,
+                "cost_sum": 0.0,
+                "quality_sum": 0.0,
+                "risk_sum": 0,
+                "hallucination_sum": 0.0,
+                "injection_sum": 0,
+            }
+        s = model_stats[m]
+        s["count"] += 1
+        s["latency_sum"] += e.get("latency_ms") or 0
+        s["cost_sum"] += e.get("estimated_cost_usd") or 0
+        s["quality_sum"] += e.get("quality_score") or 0
+        s["risk_sum"] += e.get("risk_score") or 0
+        s["hallucination_sum"] += e.get("hallucination_score") or 0
+        s["injection_sum"] += e.get("injection_score") or 0
+
+    result = []
+    for m, s in model_stats.items():
+        n = max(s["count"], 1)
+        result.append({
+            "model": m,
+            "count": s["count"],
+            "avg_latency_ms": round(s["latency_sum"] / n, 1),
+            "avg_cost_usd": round(s["cost_sum"] / n, 5),
+            "total_cost_usd": round(s["cost_sum"], 4),
+            "avg_quality": round(s["quality_sum"] / n, 3),
+            "avg_risk_score": round(s["risk_sum"] / n, 1),
+            "avg_hallucination": round(s["hallucination_sum"] / n, 3),
+            "avg_injection_score": round(s["injection_sum"] / n, 1),
+        })
+
+    result.sort(key=lambda x: x["avg_risk_score"], reverse=True)
+    return {"models": result}

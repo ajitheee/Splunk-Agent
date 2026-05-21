@@ -1,0 +1,72 @@
+{
+  "version": "1.0",
+  "policies": [
+    {
+      "id": "pol_001",
+      "name": "Block CRM Bulk Export",
+      "description": "Block any tool call to CRM bulk-export endpoint.",
+      "enabled": true,
+      "conditions": {
+        "tool_requested": ["crm.export_all_customers", "crm.export_users"]
+      },
+      "action": "block",
+      "severity_override": "critical"
+    },
+    {
+      "id": "pol_002",
+      "name": "High Injection Score Quarantine",
+      "description": "Quarantine sessions where injection score >= 80.",
+      "enabled": true,
+      "conditions": {
+        "injection_score_min": 80
+      },
+      "action": "quarantine",
+      "severity_override": "high"
+    },
+    {
+      "id": "pol_003",
+      "name": "PII + Secret Leakage Redact",
+      "description": "Redact and alert when both PII and secrets are detected.",
+      "enabled": true,
+      "conditions": {
+        "pii_detected": true,
+        "secret_detected": true
+      },
+      "action": "redact_alert",
+      "severity_override": "high"
+    },
+    {
+      "id": "pol_004",
+      "name": "Hallucination Risk Threshold",
+      "description": "Flag responses with hallucination score >= 0.7.",
+      "enabled": true,
+      "conditions": {
+        "hallucination_score_min": 0.7
+      },
+      "action": "flag",
+      "severity_override": "medium"
+    },
+    {
+      "id": "pol_005",
+      "name": "Low Quality Score Alert",
+      "description": "Alert when response quality score drops below 0.4.",
+      "enabled": true,
+      "conditions": {
+        "quality_score_max": 0.4
+      },
+      "action": "alert",
+      "severity_override": "medium"
+    },
+    {
+      "id": "pol_006",
+      "name": "Dangerous Tool Read Secrets",
+      "description": "Block attempts to read secrets or credentials.",
+      "enabled": true,
+      "conditions": {
+        "tool_requested": ["read_secrets", "get_credentials", "dump_env"]
+      },
+      "action": "block",
+      "severity_override": "critical"
+    }
+  ]
+}

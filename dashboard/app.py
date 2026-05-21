@@ -6,7 +6,6 @@ import os
 import time
 import datetime
 import plotly.graph_objects as go
-import plotly.express as px
 
 API_URL = "http://localhost:8000"
 
@@ -457,6 +456,56 @@ def run_playbook(session_id, playbook_name):
         pass
     return None
 
+def get_model_arena():
+    try:
+        res = requests.get(f"{API_URL}/model-arena", timeout=5)
+        if res.status_code == 200:
+            return res.json().get("models", [])
+    except Exception:
+        pass
+    return []
+
+def get_budget():
+    try:
+        res = requests.get(f"{API_URL}/budget", timeout=5)
+        if res.status_code == 200:
+            return res.json()
+    except Exception:
+        pass
+    return {}
+
+def get_policies():
+    try:
+        res = requests.get(f"{API_URL}/policies", timeout=5)
+        if res.status_code == 200:
+            return res.json()
+    except Exception:
+        pass
+    return []
+
+def toggle_policy(policy_id, enabled):
+    try:
+        res = requests.post(f"{API_URL}/policies/{policy_id}/toggle", json={"enabled": enabled}, timeout=5)
+        return res.status_code == 200
+    except Exception:
+        return False
+
+def get_baselines():
+    try:
+        res = requests.get(f"{API_URL}/baselines", timeout=5)
+        if res.status_code == 200:
+            return res.json()
+    except Exception:
+        pass
+    return {}
+
+def update_budget_config(cfg: dict):
+    try:
+        res = requests.post(f"{API_URL}/budget/config", json=cfg, timeout=5)
+        return res.status_code == 200
+    except Exception:
+        return False
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  COMPONENT BUILDERS
@@ -522,7 +571,8 @@ st.sidebar.markdown("""
 <div class="shimmer-line"></div>
 """, unsafe_allow_html=True)
 
-menu = ["📊 Observability", "📋 Case Hub", "🔍 Investigate", "🚀 Simulate"]
+menu = ["📊 Observability", "📋 Case Hub", "🔍 Investigate", "🚀 Simulate",
+        "🧪 Model Arena", "💰 Budget Monitor", "📜 Policies", "📈 Baselines"]
 
 if "navigation_choice" not in st.session_state:
     st.session_state.navigation_choice = menu[0]
@@ -1313,6 +1363,62 @@ elif choice == "🚀 Simulate":
 
     shimmer()
 
+    # V4/V5 simulation buttons
+    st.markdown("<h3 style='margin:0 0 14px;'>🔬 V4 / V5 Simulation Events</h3>", unsafe_allow_html=True)
+    col_hall, col_cost = st.columns(2)
+
+    with col_hall:
+        st.markdown("""
+        <div class="shield-card" style="border-color:rgba(234,179,8,0.2);min-height:160px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                <div style="width:10px;height:10px;border-radius:50%;background:#EAB308;box-shadow:0 0 10px #EAB308;"></div>
+                <h3 style="margin:0;color:#EAB308;font-size:1.05rem;">Hallucination Risk Event (V4)</h3>
+            </div>
+            <p style="color:#475569;font-size:0.85rem;margin:0 0 8px;">
+                Generates a low-quality, context-ungrounded response to trigger hallucination detection and policy pol_004/pol_005.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("🧠 Simulate Hallucination", use_container_width=True):
+            with st.spinner("Generating hallucination event..."):
+                try:
+                    res = requests.post(f"{API_URL}/simulate/hallucination", timeout=8)
+                    if res.status_code == 200:
+                        st.warning("⚠️ Hallucination event logged — check Observability & Baselines.")
+                        with st.expander("Event Payload"):
+                            st.json(res.json().get("event", {}))
+                    else:
+                        st.error("Simulation failed.")
+                except Exception as e:
+                    st.error(f"Connection error: {e}")
+
+    with col_cost:
+        st.markdown("""
+        <div class="shield-card" style="border-color:rgba(16,185,129,0.2);min-height:160px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                <div style="width:10px;height:10px;border-radius:50%;background:#10B981;box-shadow:0 0 10px #10B981;"></div>
+                <h3 style="margin:0;color:#10B981;font-size:1.05rem;">Token Cost Spike Event (V5)</h3>
+            </div>
+            <p style="color:#475569;font-size:0.85rem;margin:0 0 8px;">
+                Generates a massive token-usage event to breach session/daily budget limits and trigger 3-sigma baseline anomalies.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("💸 Simulate Cost Spike", use_container_width=True):
+            with st.spinner("Injecting cost spike event..."):
+                try:
+                    res = requests.post(f"{API_URL}/simulate/cost-spike", timeout=8)
+                    if res.status_code == 200:
+                        st.success("💰 Cost spike logged — check Budget Monitor & Baselines.")
+                        with st.expander("Event Payload"):
+                            st.json(res.json().get("event", {}))
+                    else:
+                        st.error("Simulation failed.")
+                except Exception as e:
+                    st.error(f"Connection error: {e}")
+
+    shimmer()
+
     # Pipeline architecture diagram
     st.markdown("<h3 style='margin:0 0 14px;'>🏗️ Detection Pipeline Architecture</h3>", unsafe_allow_html=True)
     st.markdown("""
@@ -1344,3 +1450,478 @@ elif choice == "🚀 Simulate":
         </div>
     </div>
     """, unsafe_allow_html=True)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  PAGE: MODEL ARENA (V5)
+# ─────────────────────────────────────────────────────────────────────────────
+elif choice == "🧪 Model Arena":
+    st.markdown("""
+    <div style="animation:slide-in-up 0.5s ease;">
+        <h1 style="margin:0;font-size:2rem;background:linear-gradient(135deg,#06B6D4,#34D399);
+                   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+            🧪 Model Comparison Arena
+        </h1>
+        <p style="color:#475569;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
+            Cost · Latency · Safety · Quality — across all LLM providers
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    shimmer()
+
+    models = get_model_arena()
+
+    if not models:
+        st.info("💡 No multi-model data yet. Run Normal or Attack simulations — each uses a randomly selected model.")
+    else:
+        # ── KPI strip ──
+        total_models = len(models)
+        safest = min(models, key=lambda m: m["avg_risk_score"])
+        cheapest = min(models, key=lambda m: m["avg_cost_usd"])
+        fastest = min(models, key=lambda m: m["avg_latency_ms"])
+        best_quality = max(models, key=lambda m: m["avg_quality"])
+
+        k1, k2, k3, k4 = st.columns(4)
+        with k1: st.markdown(metric_card_html("Models Tracked", str(total_models), "Unique providers", "#8B5CF6", "🤖"), unsafe_allow_html=True)
+        with k2: st.markdown(metric_card_html("Safest Model", safest["model"].split("-")[0], f"Risk {safest['avg_risk_score']:.1f}/100", "#34D399", "🛡️"), unsafe_allow_html=True)
+        with k3: st.markdown(metric_card_html("Fastest Model", fastest["model"].split("-")[0], f"{fastest['avg_latency_ms']:.0f}ms avg", "#06B6D4", "⚡"), unsafe_allow_html=True)
+        with k4: st.markdown(metric_card_html("Cheapest Model", cheapest["model"].split("-")[0], f"${cheapest['avg_cost_usd']:.5f}/req", "#10B981", "💰"), unsafe_allow_html=True)
+
+        shimmer()
+
+        df_models = pd.DataFrame(models)
+
+        # ── Chart 1: Cost vs Latency bubble (size = risk score) ──
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown("<h3 style='margin:0 0 12px;'>💸 Cost vs Latency (bubble = risk)</h3>", unsafe_allow_html=True)
+            model_colors = ["#8B5CF6", "#EC4899", "#06B6D4", "#34D399", "#F97316", "#EAB308"]
+            fig_arena = go.Figure()
+            for i, row in df_models.iterrows():
+                fig_arena.add_trace(go.Scatter(
+                    x=[row["avg_latency_ms"]],
+                    y=[row["avg_cost_usd"]],
+                    mode="markers+text",
+                    name=row["model"],
+                    text=[row["model"]],
+                    textposition="top center",
+                    textfont=dict(color="#CBD5E1", size=9, family="Space Grotesk"),
+                    marker=dict(
+                        size=max(12, row["avg_risk_score"] * 0.8),
+                        color=model_colors[i % len(model_colors)],
+                        opacity=0.85,
+                        line=dict(color="#04051A", width=2)
+                    ),
+                    hovertemplate=f"<b>{row['model']}</b><br>Latency: {row['avg_latency_ms']:.0f}ms<br>Cost/req: ${row['avg_cost_usd']:.5f}<br>Risk: {row['avg_risk_score']:.1f}<br>Requests: {row['count']}<extra></extra>"
+                ))
+            fig_arena.update_layout(
+                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                showlegend=False, margin=dict(l=0, r=0, t=10, b=0),
+                xaxis=dict(showgrid=True, gridcolor="rgba(100,116,139,0.08)", zeroline=False, color="#334155", title="Avg Latency (ms)"),
+                yaxis=dict(showgrid=True, gridcolor="rgba(100,116,139,0.08)", zeroline=False, color="#334155", title="Avg Cost per Request (USD)"),
+                hoverlabel=dict(bgcolor="#0E0E2C", bordercolor="#8B5CF6", font=dict(family="Inter", color="#E2E8F0"))
+            )
+            st.plotly_chart(fig_arena, use_container_width=True, config={"displayModeBar": False})
+
+        with c2:
+            st.markdown("<h3 style='margin:0 0 12px;'>🛡️ Safety Radar (lower = safer)</h3>", unsafe_allow_html=True)
+            categories = ["Avg Risk", "Avg Injection", "Hallucination", "Inv. Quality"]
+            fig_radar = go.Figure()
+            for i, row in df_models.iterrows():
+                inv_quality = round(1.0 - row["avg_quality"], 3)
+                fig_radar.add_trace(go.Scatterpolar(
+                    r=[row["avg_risk_score"], row["avg_injection_score"], row["avg_hallucination"] * 100, inv_quality * 100],
+                    theta=categories,
+                    fill="toself",
+                    name=row["model"],
+                    line=dict(color=model_colors[i % len(model_colors)], width=1.5),
+                    fillcolor=model_colors[i % len(model_colors)].replace(")", ",0.08)").replace("rgb", "rgba") if "rgb" in model_colors[i % len(model_colors)] else model_colors[i % len(model_colors)] + "15",
+                    opacity=0.8
+                ))
+            fig_radar.update_layout(
+                paper_bgcolor="rgba(0,0,0,0)",
+                polar=dict(
+                    bgcolor="rgba(0,0,0,0)",
+                    radialaxis=dict(visible=True, gridcolor="rgba(100,116,139,0.15)", color="#475569", range=[0, 100]),
+                    angularaxis=dict(gridcolor="rgba(100,116,139,0.15)", color="#94A3B8", tickfont=dict(family="Space Grotesk", size=11))
+                ),
+                showlegend=True,
+                legend=dict(orientation="h", y=-0.15, bgcolor="rgba(0,0,0,0)", font=dict(color="#94A3B8", size=10)),
+                margin=dict(l=30, r=30, t=10, b=40)
+            )
+            st.plotly_chart(fig_radar, use_container_width=True, config={"displayModeBar": False})
+
+        shimmer()
+
+        # ── Chart 2: Grouped bar — quality vs hallucination ──
+        st.markdown("<h3 style='margin:0 0 12px;'>🧠 Quality vs Hallucination Risk per Model</h3>", unsafe_allow_html=True)
+        fig_qh = go.Figure()
+        fig_qh.add_trace(go.Bar(
+            name="Avg Quality",
+            x=df_models["model"],
+            y=df_models["avg_quality"],
+            marker=dict(color="#34D399", opacity=0.85, line=dict(width=0)),
+            hovertemplate="<b>%{x}</b><br>Quality: %{y:.3f}<extra></extra>"
+        ))
+        fig_qh.add_trace(go.Bar(
+            name="Hallucination Score",
+            x=df_models["model"],
+            y=df_models["avg_hallucination"],
+            marker=dict(color="#EF4444", opacity=0.75, line=dict(width=0)),
+            hovertemplate="<b>%{x}</b><br>Hallucination: %{y:.3f}<extra></extra>"
+        ))
+        fig_qh.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+            barmode="group", margin=dict(l=0, r=0, t=0, b=0),
+            xaxis=dict(showgrid=False, zeroline=False, color="#475569", tickfont=dict(size=10, family="Space Grotesk")),
+            yaxis=dict(showgrid=True, gridcolor="rgba(100,116,139,0.08)", zeroline=False, color="#334155", range=[0, 1.1]),
+            legend=dict(orientation="h", y=1.05, bgcolor="rgba(0,0,0,0)", font=dict(color="#94A3B8")),
+            hoverlabel=dict(bgcolor="#0E0E2C", bordercolor="#34D399", font=dict(family="Inter", color="#E2E8F0"))
+        )
+        st.plotly_chart(fig_qh, use_container_width=True, config={"displayModeBar": False})
+
+        shimmer()
+
+        # ── Model table ──
+        st.markdown("<h3 style='margin:0 0 12px;'>📋 Full Model Comparison Table</h3>", unsafe_allow_html=True)
+        display_df = df_models[["model", "count", "avg_latency_ms", "avg_cost_usd", "total_cost_usd", "avg_quality", "avg_risk_score", "avg_hallucination", "avg_injection_score"]].copy()
+        display_df.columns = ["Model", "Requests", "Avg Latency (ms)", "Avg Cost/Req ($)", "Total Cost ($)", "Avg Quality", "Avg Risk", "Avg Hallucination", "Avg Injection"]
+        st.dataframe(display_df, use_container_width=True)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  PAGE: BUDGET MONITOR (V5)
+# ─────────────────────────────────────────────────────────────────────────────
+elif choice == "💰 Budget Monitor":
+    st.markdown("""
+    <div style="animation:slide-in-up 0.5s ease;">
+        <h1 style="margin:0;font-size:2rem;background:linear-gradient(135deg,#10B981,#06B6D4);
+                   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+            💰 Dynamic Budget Monitor
+        </h1>
+        <p style="color:#475569;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
+            Token spend · Cost containment · Auto-trigger thresholds
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    shimmer()
+
+    budget = get_budget()
+    if not budget:
+        st.error("Cannot reach backend.")
+    else:
+        cfg = budget.get("config", {})
+        daily = budget.get("daily", {})
+        daily_token_pct = budget.get("daily_token_pct", 0)
+        daily_cost_pct = budget.get("daily_cost_pct", 0)
+
+        # ── KPI strip ──
+        k1, k2, k3, k4 = st.columns(4)
+        with k1: st.markdown(metric_card_html("Daily Tokens Used", f"{daily.get('tokens', 0):,}", f"{daily_token_pct}% of limit", "#8B5CF6" if daily_token_pct < 80 else "#EF4444", "🔢"), unsafe_allow_html=True)
+        with k2: st.markdown(metric_card_html("Daily Cost", f"${daily.get('cost_usd', 0):.4f}", f"{daily_cost_pct}% of limit", "#10B981" if daily_cost_pct < 80 else "#EF4444", "💵"), unsafe_allow_html=True)
+        with k3: st.markdown(metric_card_html("Sessions Tracked", str(budget.get("sessions_tracked", 0)), "Active today", "#06B6D4", "🗂"), unsafe_allow_html=True)
+        with k4:
+            alert_color = "#EF4444" if daily_token_pct >= 100 or daily_cost_pct >= 100 else ("#F97316" if daily_token_pct >= 80 or daily_cost_pct >= 80 else "#34D399")
+            alert_label = "EXCEEDED" if daily_token_pct >= 100 or daily_cost_pct >= 100 else ("WARNING" if daily_token_pct >= 80 or daily_cost_pct >= 80 else "HEALTHY")
+            st.markdown(metric_card_html("Budget Status", alert_label, "Daily aggregate", alert_color, "🚦"), unsafe_allow_html=True)
+
+        shimmer()
+
+        # ── Gauge charts ──
+        g1, g2 = st.columns(2)
+        with g1:
+            st.markdown("<h3 style='margin:0 0 12px;'>📊 Daily Token Budget</h3>", unsafe_allow_html=True)
+            fig_tg = go.Figure(go.Indicator(
+                mode="gauge+number+delta",
+                value=daily_token_pct,
+                delta={"reference": cfg.get("alert_threshold_pct", 80), "valueformat": ".1f", "suffix": "%"},
+                title={"text": "% of Daily Token Limit", "font": {"color": "#94A3B8", "family": "Space Grotesk"}},
+                number={"suffix": "%", "font": {"color": "#F1F5F9", "family": "Inter"}},
+                gauge={
+                    "axis": {"range": [0, 100], "tickcolor": "#475569", "tickfont": {"color": "#475569"}},
+                    "bar": {"color": "#8B5CF6" if daily_token_pct < 80 else "#EF4444"},
+                    "bgcolor": "rgba(0,0,0,0)",
+                    "borderwidth": 0,
+                    "steps": [
+                        {"range": [0, cfg.get("alert_threshold_pct", 80)], "color": "rgba(139,92,246,0.08)"},
+                        {"range": [cfg.get("alert_threshold_pct", 80), 100], "color": "rgba(239,68,68,0.12)"}
+                    ],
+                    "threshold": {"line": {"color": "#F97316", "width": 3}, "thickness": 0.8, "value": cfg.get("alert_threshold_pct", 80)}
+                }
+            ))
+            fig_tg.update_layout(paper_bgcolor="rgba(0,0,0,0)", font=dict(color="#94A3B8"), margin=dict(l=20, r=20, t=40, b=0), height=260)
+            st.plotly_chart(fig_tg, use_container_width=True, config={"displayModeBar": False})
+            st.markdown(f"<p style='color:#475569;font-size:0.8rem;text-align:center;'>{daily.get('tokens', 0):,} / {cfg.get('daily_token_limit', 0):,} tokens</p>", unsafe_allow_html=True)
+
+        with g2:
+            st.markdown("<h3 style='margin:0 0 12px;'>💵 Daily Cost Budget</h3>", unsafe_allow_html=True)
+            fig_cg = go.Figure(go.Indicator(
+                mode="gauge+number+delta",
+                value=daily_cost_pct,
+                delta={"reference": cfg.get("alert_threshold_pct", 80), "valueformat": ".1f", "suffix": "%"},
+                title={"text": "% of Daily Cost Limit", "font": {"color": "#94A3B8", "family": "Space Grotesk"}},
+                number={"suffix": "%", "font": {"color": "#F1F5F9", "family": "Inter"}},
+                gauge={
+                    "axis": {"range": [0, 100], "tickcolor": "#475569", "tickfont": {"color": "#475569"}},
+                    "bar": {"color": "#10B981" if daily_cost_pct < 80 else "#EF4444"},
+                    "bgcolor": "rgba(0,0,0,0)",
+                    "borderwidth": 0,
+                    "steps": [
+                        {"range": [0, cfg.get("alert_threshold_pct", 80)], "color": "rgba(16,185,129,0.08)"},
+                        {"range": [cfg.get("alert_threshold_pct", 80), 100], "color": "rgba(239,68,68,0.12)"}
+                    ],
+                    "threshold": {"line": {"color": "#F97316", "width": 3}, "thickness": 0.8, "value": cfg.get("alert_threshold_pct", 80)}
+                }
+            ))
+            fig_cg.update_layout(paper_bgcolor="rgba(0,0,0,0)", font=dict(color="#94A3B8"), margin=dict(l=20, r=20, t=40, b=0), height=260)
+            st.plotly_chart(fig_cg, use_container_width=True, config={"displayModeBar": False})
+            st.markdown(f"<p style='color:#475569;font-size:0.8rem;text-align:center;'>${daily.get('cost_usd', 0):.4f} / ${cfg.get('daily_cost_limit_usd', 0):.2f}</p>", unsafe_allow_html=True)
+
+        shimmer()
+
+        # ── Per-session table ──
+        sessions = budget.get("session_details", [])
+        if sessions:
+            st.markdown("<h3 style='margin:0 0 12px;'>📋 Session Budget Usage (last 20)</h3>", unsafe_allow_html=True)
+            sess_df = pd.DataFrame(sessions)
+            sess_df.columns = ["Session ID", "Tokens", "Cost (USD)", "Token % of Limit"]
+            st.dataframe(sess_df, use_container_width=True, height=280)
+
+        shimmer()
+
+        # ── Config editor ──
+        st.markdown("<h3 style='margin:0 0 12px;'>⚙️ Budget Configuration</h3>", unsafe_allow_html=True)
+        with st.form("budget_config_form"):
+            bc1, bc2 = st.columns(2)
+            with bc1:
+                new_sess_token = st.number_input("Per-Session Token Limit", min_value=100, max_value=100000, value=int(cfg.get("per_session_token_limit", 5000)), step=500)
+                new_sess_cost = st.number_input("Per-Session Cost Limit (USD)", min_value=0.01, max_value=100.0, value=float(cfg.get("per_session_cost_limit_usd", 1.00)), step=0.10, format="%.2f")
+            with bc2:
+                new_daily_tokens = st.number_input("Daily Token Limit", min_value=1000, max_value=10000000, value=int(cfg.get("daily_token_limit", 500000)), step=10000)
+                new_daily_cost = st.number_input("Daily Cost Limit (USD)", min_value=1.0, max_value=10000.0, value=float(cfg.get("daily_cost_limit_usd", 50.0)), step=5.0, format="%.2f")
+            new_alert_pct = st.slider("Alert Threshold (%)", min_value=50, max_value=95, value=int(cfg.get("alert_threshold_pct", 80)), step=5)
+
+            col_save, col_reset = st.columns(2)
+            with col_save:
+                if st.form_submit_button("💾 Save Config"):
+                    ok = update_budget_config({
+                        "per_session_token_limit": new_sess_token,
+                        "per_session_cost_limit_usd": new_sess_cost,
+                        "daily_token_limit": new_daily_tokens,
+                        "daily_cost_limit_usd": new_daily_cost,
+                        "alert_threshold_pct": new_alert_pct
+                    })
+                    if ok:
+                        st.success("Budget config saved.")
+                        time.sleep(0.4)
+                        trigger_rerun()
+                    else:
+                        st.error("Failed to save config.")
+            with col_reset:
+                if st.form_submit_button("🔄 Reset Usage State"):
+                    try:
+                        requests.post(f"{API_URL}/budget/reset", timeout=5)
+                        st.success("Budget usage reset.")
+                        time.sleep(0.4)
+                        trigger_rerun()
+                    except Exception as e:
+                        st.error(f"Error: {e}")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  PAGE: POLICY MANAGER (V4)
+# ─────────────────────────────────────────────────────────────────────────────
+elif choice == "📜 Policies":
+    st.markdown("""
+    <div style="animation:slide-in-up 0.5s ease;">
+        <h1 style="margin:0;font-size:2rem;background:linear-gradient(135deg,#F97316,#EC4899);
+                   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+            📜 Policy-as-Code Engine
+        </h1>
+        <p style="color:#475569;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
+            Live rule enforcement · Dynamic enable/disable · Intercept unsafe transactions
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    shimmer()
+
+    policies = get_policies()
+    if not policies:
+        st.info("No policies loaded. Ensure the backend is running.")
+    else:
+        enabled_count = sum(1 for p in policies if p.get("enabled"))
+        total_count = len(policies)
+
+        k1, k2, k3 = st.columns(3)
+        with k1: st.markdown(metric_card_html("Total Policies", str(total_count), "Defined rules", "#8B5CF6", "📜"), unsafe_allow_html=True)
+        with k2: st.markdown(metric_card_html("Active Rules", str(enabled_count), "Currently enforcing", "#34D399", "✅"), unsafe_allow_html=True)
+        with k3: st.markdown(metric_card_html("Disabled Rules", str(total_count - enabled_count), "Paused policies", "#475569", "⏸"), unsafe_allow_html=True)
+
+        shimmer()
+
+        action_colors = {
+            "block": "#EF4444",
+            "quarantine": "#F97316",
+            "redact_alert": "#EAB308",
+            "flag": "#8B5CF6",
+            "alert": "#06B6D4",
+        }
+        severity_colors = {"critical": "#EF4444", "high": "#F97316", "medium": "#EAB308", "low": "#34D399"}
+
+        st.markdown("<h3 style='margin:0 0 14px;'>🔧 Policy Rules</h3>", unsafe_allow_html=True)
+        for p in policies:
+            pid = p["id"]
+            enabled = p.get("enabled", True)
+            action = p.get("action", "flag")
+            sev = p.get("severity_override", "medium")
+            ac = action_colors.get(action, "#8B5CF6")
+            sc = severity_colors.get(sev, "#8B5CF6")
+            border = ac if enabled else "rgba(100,116,139,0.2)"
+            opacity = "1" if enabled else "0.45"
+
+            cond_str = json.dumps(p.get("conditions", {}), separators=(",", ":"))
+
+            st.markdown(f"""
+            <div class="incident-card" style="border-left:4px solid {border};opacity:{opacity};">
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                        <span style="font-family:'Fira Code',monospace;font-size:0.8rem;color:#64748B;">{pid}</span>
+                        <span style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1rem;color:#F1F5F9;">{p['name']}</span>
+                        <span class="badge" style="background:{ac}22;color:{ac};border:1px solid {ac}44;">{action.upper()}</span>
+                        <span class="badge" style="background:{sc}22;color:{sc};border:1px solid {sc}44;">{sev.upper()}</span>
+                        {'<span class="badge" style="background:rgba(52,211,153,0.15);color:#34D399;border:1px solid #34D39944;">ACTIVE</span>' if enabled else '<span class="badge" style="background:rgba(100,116,139,0.15);color:#64748B;border:1px solid #47556944;">DISABLED</span>'}
+                    </div>
+                </div>
+                <p style="color:#64748B;font-size:0.83rem;margin:8px 0 4px;">{p.get('description', '')}</p>
+                <code style="font-size:0.78rem;">{cond_str}</code>
+            </div>
+            """, unsafe_allow_html=True)
+
+            btn_label = "⏸ Disable" if enabled else "▶ Enable"
+            btn_col, _ = st.columns([1, 5])
+            with btn_col:
+                if st.button(btn_label, key=f"pol_{pid}"):
+                    if toggle_policy(pid, not enabled):
+                        st.success(f"Policy {pid} {'enabled' if not enabled else 'disabled'}.")
+                        time.sleep(0.3)
+                        trigger_rerun()
+                    else:
+                        st.error("Failed to update policy.")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  PAGE: BEHAVIORAL BASELINES (V5)
+# ─────────────────────────────────────────────────────────────────────────────
+elif choice == "📈 Baselines":
+    st.markdown("""
+    <div style="animation:slide-in-up 0.5s ease;">
+        <h1 style="margin:0;font-size:2rem;background:linear-gradient(135deg,#8B5CF6,#06B6D4);
+                   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+            📈 Behavioral Baselines & Anomaly Detection
+        </h1>
+        <p style="color:#475569;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
+            3-sigma statistical thresholds · Real-time drift alerting · Metric baselines
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    shimmer()
+
+    report = get_baselines()
+    if not report:
+        st.info("💡 No baseline data yet. Run at least 5 normal simulations to build baselines.")
+    else:
+        baselines = report.get("baselines", {})
+        anomalies_list = report.get("recent_anomalies", [])
+        total_events = report.get("total_events_analyzed", 0)
+        anomaly_count = report.get("anomaly_count", 0)
+
+        k1, k2, k3, k4 = st.columns(4)
+        with k1: st.markdown(metric_card_html("Events Analyzed", f"{total_events:,}", "Baseline sample size", "#8B5CF6", "📊"), unsafe_allow_html=True)
+        with k2: st.markdown(metric_card_html("Metrics Baselined", str(len(baselines)), "Active metric monitors", "#06B6D4", "📏"), unsafe_allow_html=True)
+        with k3: st.markdown(metric_card_html("Recent Anomalies", str(anomaly_count), "In last 20 events", "#EF4444" if anomaly_count > 0 else "#34D399", "⚠️"), unsafe_allow_html=True)
+        with k4:
+            status_label = "ALERT" if anomaly_count >= 3 else ("WATCH" if anomaly_count > 0 else "NORMAL")
+            status_color = "#EF4444" if anomaly_count >= 3 else ("#F97316" if anomaly_count > 0 else "#34D399")
+            st.markdown(metric_card_html("Drift Status", status_label, "Behavioral drift state", status_color, "🎯"), unsafe_allow_html=True)
+
+        shimmer()
+
+        if baselines:
+            # ── Baseline metric bar chart ──
+            st.markdown("<h3 style='margin:0 0 12px;'>📐 Computed Baselines (Mean ± 3σ)</h3>", unsafe_allow_html=True)
+            metric_names = list(baselines.keys())
+            means = [baselines[m]["mean"] for m in metric_names]
+            thresholds = [baselines[m]["threshold_3sigma"] for m in metric_names]
+            samples = [baselines[m]["sample_count"] for m in metric_names]
+
+            fig_bl = go.Figure()
+            fig_bl.add_trace(go.Bar(
+                name="Mean",
+                x=metric_names,
+                y=means,
+                marker=dict(color="#8B5CF6", opacity=0.8, line=dict(width=0)),
+                hovertemplate="<b>%{x}</b><br>Mean: %{y:.4f}<extra></extra>"
+            ))
+            fig_bl.add_trace(go.Scatter(
+                name="3σ Threshold",
+                x=metric_names,
+                y=thresholds,
+                mode="markers",
+                marker=dict(symbol="line-ew", size=16, color="#EF4444", line=dict(color="#EF4444", width=3)),
+                hovertemplate="<b>%{x}</b><br>3σ Threshold: %{y:.4f}<extra></extra>"
+            ))
+            fig_bl.update_layout(
+                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                barmode="group", margin=dict(l=0, r=0, t=10, b=0),
+                xaxis=dict(showgrid=False, zeroline=False, color="#475569", tickfont=dict(size=10, family="Space Grotesk"),
+                           tickangle=-20),
+                yaxis=dict(showgrid=True, gridcolor="rgba(100,116,139,0.08)", zeroline=False, color="#334155"),
+                legend=dict(orientation="h", y=1.05, bgcolor="rgba(0,0,0,0)", font=dict(color="#94A3B8")),
+                hoverlabel=dict(bgcolor="#0E0E2C", bordercolor="#8B5CF6", font=dict(family="Inter", color="#E2E8F0"))
+            )
+            st.plotly_chart(fig_bl, use_container_width=True, config={"displayModeBar": False})
+
+            shimmer()
+
+            # ── Baseline detail table ──
+            st.markdown("<h3 style='margin:0 0 12px;'>📋 Metric Baseline Table</h3>", unsafe_allow_html=True)
+            bl_rows = []
+            for m, b in baselines.items():
+                bl_rows.append({
+                    "Metric": m,
+                    "Mean": round(b["mean"], 4),
+                    "Std Dev": round(b["stdev"], 4),
+                    "3σ Threshold": round(b["threshold_3sigma"], 4),
+                    "Sample Count": b["sample_count"]
+                })
+            st.dataframe(pd.DataFrame(bl_rows), use_container_width=True)
+
+        shimmer()
+
+        # ── Recent anomalies ──
+        st.markdown("<h3 style='margin:0 0 12px;'>🚨 Recent Anomaly Events</h3>", unsafe_allow_html=True)
+        if not anomalies_list:
+            st.markdown("<p style='color:#34D399;font-size:0.9rem;'>✓ No anomalies detected in the last 20 events.</p>", unsafe_allow_html=True)
+        else:
+            for item in reversed(anomalies_list):
+                sess = item.get("session_id", "—")
+                ts = (item.get("timestamp") or "")[:19]
+                for a in item.get("anomalies", []):
+                    z = a["z_score"]
+                    sev_c = "#EF4444" if a["severity"] == "critical" else "#F97316"
+                    st.markdown(f"""
+                    <div class="incident-card" style="border-left:4px solid {sev_c};">
+                        <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;">
+                            <span style="font-family:'Fira Code',monospace;font-size:0.82rem;color:#64748B;">{sess}</span>
+                            <span style="color:#94A3B8;font-size:0.78rem;">⏱ {ts}</span>
+                            <span class="badge" style="background:{sev_c}22;color:{sev_c};border:1px solid {sev_c}44;">{a['severity'].upper()}</span>
+                        </div>
+                        <div style="margin-top:8px;display:flex;gap:24px;flex-wrap:wrap;font-size:0.85rem;">
+                            <span>Metric: <strong style="color:#C4B5FD;">{a['metric']}</strong></span>
+                            <span>Value: <strong style="color:#F1F5F9;">{a['value']}</strong></span>
+                            <span>Mean: <strong style="color:#94A3B8;">{a['mean']}</strong></span>
+                            <span>Z-Score: <strong style="color:{sev_c};">{z:+.2f}</strong></span>
+                            <span>Direction: <strong style="color:{'#EF4444' if a['direction']=='high' else '#06B6D4'};">{a['direction'].upper()}</strong></span>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)

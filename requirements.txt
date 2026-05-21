@@ -5,6 +5,8 @@ pandas
 requests
 python-dotenv
 pydantic
+plotly
+numpy
 opentelemetry-api
 opentelemetry-sdk
 opentelemetry-instrumentation-fastapi
