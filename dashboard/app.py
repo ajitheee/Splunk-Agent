@@ -510,6 +510,11 @@ def update_budget_config(cfg: dict):
 # ─────────────────────────────────────────────────────────────────────────────
 #  COMPONENT BUILDERS
 # ─────────────────────────────────────────────────────────────────────────────
+def hex_to_rgba(hex_color, alpha=0.15):
+    h = hex_color.lstrip("#")
+    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    return f"rgba({r},{g},{b},{alpha})"
+
 def status_badge(status):
     palette = {
         "New":         ("rgba(139,92,246,0.18)", "#A78BFA", "◉"),
@@ -1535,7 +1540,7 @@ elif choice == "🧪 Model Arena":
                     fill="toself",
                     name=row["model"],
                     line=dict(color=model_colors[i % len(model_colors)], width=1.5),
-                    fillcolor=model_colors[i % len(model_colors)].replace(")", ",0.08)").replace("rgb", "rgba") if "rgb" in model_colors[i % len(model_colors)] else model_colors[i % len(model_colors)] + "15",
+                    fillcolor=hex_to_rgba(model_colors[i % len(model_colors)], 0.12),
                     opacity=0.8
                 ))
             fig_radar.update_layout(
