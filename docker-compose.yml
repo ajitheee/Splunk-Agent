@@ -12,6 +12,7 @@ services:
       - FALLBACK_LOG_FILE=/app/data/ai_agent_logs.jsonl
       - SPLUNK_HEC_URL=${SPLUNK_HEC_URL:-}
       - SPLUNK_HEC_TOKEN=${SPLUNK_HEC_TOKEN:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
     volumes:
       - ./data:/app/data
     restart: unless-stopped

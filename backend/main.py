@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import os
 import json
+import anthropic
 from .hec_sender import send_event_to_splunk
 from agent_app.simulator import (
     generate_normal_event,
@@ -204,22 +205,85 @@ def get_incident(session_id: str):
 def generate_summary(session_id: str):
     incident_data = get_incident(session_id)
     events = incident_data["events"]
-    # Mock AI Summary Generation
+
+    # Build timeline for both the prompt and the AI call
     timeline = []
     for e in events:
-        timeline.append(f"{e.get('timestamp')} - Prompt received: [REDACTED]")
-        timeline.append(f"{e.get('timestamp')} - Tool {e.get('tool_requested')} requested")
-        timeline.append(f"{e.get('timestamp')} - Incident flagged as {e.get('risk_type')}")
-    summary = {
-        "executive_summary": "An unauthenticated user attempted a prompt injection to export VIP customer emails.",
-        "severity": events[0].get("severity", "unknown"),
-        "confidence": "High (92%)",
+        timeline.append(f"{e.get('timestamp')} - Prompt received (injection_score={e.get('injection_score', 'N/A')})")
+        timeline.append(f"{e.get('timestamp')} - Tool '{e.get('tool_requested')}' requested (allowed={e.get('tool_allowed')})")
+        timeline.append(f"{e.get('timestamp')} - Flagged as {e.get('risk_type')} · severity={e.get('severity')}")
+
+    api_key = os.getenv("ANTHROPIC_API_KEY", "")
+    if api_key:
+        try:
+            # Build a compact event snapshot for the prompt
+            first = events[0]
+            event_snapshot = json.dumps({
+                k: first.get(k) for k in [
+                    "agent_name", "user_id", "source_ip", "model",
+                    "prompt", "tool_requested", "tool_allowed",
+                    "injection_score", "pii_detected", "secret_detected",
+                    "hallucination_score", "risk_type", "risk_score", "severity",
+                    "policy_violations", "budget_violations", "baseline_anomalies",
+                ]
+            }, indent=2)
+
+            client = anthropic.Anthropic(api_key=api_key)
+            message = client.messages.create(
+                model="claude-haiku-4-5-20251001",
+                max_tokens=600,
+                messages=[{
+                    "role": "user",
+                    "content": (
+                        "You are a senior SOC analyst. Analyze this AI agent security incident and respond "
+                        "with a JSON object containing exactly these keys: "
+                        "executive_summary (2 sentences), root_cause (1 sentence), impact (1 sentence), "
+                        "confidence (e.g. 'High (91%)'), recommended_actions (list of 3 strings). "
+                        "Be specific and concise. Respond ONLY with valid JSON.\n\n"
+                        f"Incident data:\n{event_snapshot}"
+                    )
+                }]
+            )
+            raw = message.content[0].text.strip()
+            # Strip markdown code fences if present
+            if raw.startswith("```"):
+                raw = raw.split("```")[1]
+                if raw.startswith("json"):
+                    raw = raw[4:]
+            ai_result = json.loads(raw)
+            return {
+                "session_id": session_id,
+                "severity": first.get("severity", "unknown"),
+                "timeline": timeline,
+                "ai_generated": True,
+                **ai_result,
+            }
+        except Exception as e:
+            # Fall through to static fallback on any error
+            pass
+
+    # Static fallback when ANTHROPIC_API_KEY is not set
+    first = events[0]
+    return {
+        "session_id": session_id,
+        "executive_summary": (
+            f"Agent '{first.get('agent_name')}' processed a {first.get('risk_type', 'unknown')} event "
+            f"with severity {first.get('severity')}. "
+            f"Injection score was {first.get('injection_score', 'N/A')} and tool "
+            f"'{first.get('tool_requested')}' was {'allowed' if first.get('tool_allowed') else 'blocked'}."
+        ),
+        "severity": first.get("severity", "unknown"),
+        "confidence": "High (88%)",
         "timeline": timeline,
-        "root_cause": "Missing authorization guardrail on tool execution.",
-        "impact": "Potential PII leakage prevented by tool disallow policy.",
-        "recommended_actions": ["Block session", "Disable crm.export_all_customers tool"]
+        "root_cause": "Prompt injection attempt targeting sensitive tool execution.",
+        "impact": "Potential PII leakage prevented by tool disallow and policy engine.",
+        "recommended_actions": [
+            f"Block session {session_id}",
+            f"Disable tool '{first.get('tool_requested')}'",
+            "Review policy rules for injection_score threshold",
+        ],
+        "ai_generated": False,
     }
-    return summary
 
 @app.post("/incidents/{session_id}/remediate")
 def remediate_incident(session_id: str, req: RemediationRequest):
