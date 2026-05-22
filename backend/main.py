@@ -12,6 +12,7 @@ from agent_app.simulator import (
     MODEL_PROFILES,
 )
 from .hallucination_checker import check_hallucination
+from agent_app.real_agent import run_normal_transaction, run_attack_transaction
 from .policy_engine import load_policies, save_policies, evaluate_event
 from .budget_monitor import check_and_update_budget, get_budget_summary, load_budget_config, save_budget_config, reset_budget_state
 from .baseline_engine import compute_baselines, check_anomalies, get_baseline_report
@@ -118,16 +119,24 @@ def _enrich_and_send(event: dict, span) -> dict:
 def simulate_normal():
     with tracer.start_as_current_span("agent_session") as span:
         event = generate_normal_event()
+        # Use real Claude agent when API key is available
+        real = run_normal_transaction(event["session_id"], event["user_id"])
+        if real:
+            event.update(real)
         event = _enrich_and_send(event, span)
-    return {"status": "success", "event": event}
+    return {"status": "success", "event": event, "real_agent": bool(real if 'real' in dir() else False)}
 
 
 @app.post("/simulate/attack")
 def simulate_attack():
     with tracer.start_as_current_span("agent_session") as span:
         event = generate_attack_event()
+        # Use real Claude agent when API key is available — sends actual injection to Claude
+        real = run_attack_transaction(event["session_id"])
+        if real:
+            event.update(real)
         event = _enrich_and_send(event, span)
-    return {"status": "success", "event": event}
+    return {"status": "success", "event": event, "real_agent": bool(real if 'real' in dir() else False)}
 
 
 @app.post("/simulate/hallucination")

@@ -1322,13 +1322,18 @@ elif choice == "🚀 Simulate":
         </div>
         """, unsafe_allow_html=True)
         if st.button("▶ Run Normal Transaction", use_container_width=True):
-            with st.spinner("Emitting normal event to pipeline..."):
+            with st.spinner("Running real Claude agent transaction..."):
                 try:
-                    res = requests.post(f"{API_URL}/simulate/normal", timeout=8)
+                    res = requests.post(f"{API_URL}/simulate/normal", timeout=20)
                     if res.status_code == 200:
-                        st.success("✅ Transaction logged · Splunk HEC confirmed · Baseline updated")
-                        with st.expander("Event Payload"):
-                            st.json(res.json().get("event", {}))
+                        data = res.json()
+                        is_real = data.get("real_agent", False)
+                        if is_real:
+                            st.success("✅ Real Claude agent call completed · AgentShield monitored it · Logged to Splunk")
+                        else:
+                            st.success("✅ Transaction logged · Splunk HEC confirmed · Baseline updated")
+                        with st.expander(f"Event Payload {'(Real Claude Response)' if is_real else '(Simulated)'}"):
+                            st.json(data.get("event", {}))
                     else:
                         st.error("Simulation endpoint returned error.")
                 except Exception as e:
@@ -1353,13 +1358,17 @@ elif choice == "🚀 Simulate":
         </div>
         """, unsafe_allow_html=True)
         if st.button("⚡ Launch Attack Simulation", type="primary", use_container_width=True):
-            with st.spinner("Injecting malicious payload..."):
+            with st.spinner("Sending real injection prompt to Claude agent..."):
                 try:
-                    res = requests.post(f"{API_URL}/simulate/attack", timeout=8)
+                    res = requests.post(f"{API_URL}/simulate/attack", timeout=20)
                     if res.status_code == 200:
-                        st.error("🚨 CRITICAL: Malicious transaction detected and logged!")
-                        with st.expander("Threat Event Payload"):
-                            st.json(res.json().get("event", {}))
+                        data = res.json()
+                        is_real = data.get("real_agent", False)
+                        st.error("🚨 CRITICAL: Prompt injection detected and blocked!")
+                        if is_real:
+                            st.warning("Real injection prompt was sent to Claude · AgentShield intercepted and scored it · Logged to Splunk")
+                        with st.expander(f"Threat Event Payload {'(Real Claude Response)' if is_real else '(Simulated)'}"):
+                            st.json(data.get("event", {}))
                         st.info("💡 Check **Case Hub** to see the auto-created incident.")
                     else:
                         st.error("Simulation failed.")
