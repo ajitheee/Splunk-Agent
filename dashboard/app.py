@@ -576,8 +576,20 @@ st.sidebar.markdown("""
 <div class="shimmer-line"></div>
 """, unsafe_allow_html=True)
 
-menu = ["📊 Observability", "📋 Case Hub", "🔍 Investigate", "🚀 Simulate",
+menu = ["🏠 Overview", "📊 Observability", "📋 Case Hub", "🔍 Investigate", "🚀 Simulate",
         "🧪 Model Arena", "💰 Budget Monitor", "📜 Policies", "📈 Baselines"]
+
+menu_descriptions = {
+    "🏠 Overview":       "Start here · What AgentShield does",
+    "📊 Observability":  "Live telemetry · Risk scores · Cost",
+    "📋 Case Hub":       "Manage & triage incidents",
+    "🔍 Investigate":    "Forensics · AI summaries · Playbooks",
+    "🚀 Simulate":       "Run normal & attack scenarios",
+    "🧪 Model Arena":    "Compare Claude model performance",
+    "💰 Budget Monitor": "Token limits · Spend tracking",
+    "📜 Policies":       "Security rules & enforcement",
+    "📈 Baselines":      "Behavioral norms & anomaly bands",
+}
 
 if "navigation_choice" not in st.session_state:
     st.session_state.navigation_choice = menu[0]
@@ -585,22 +597,196 @@ if "navigation_choice" not in st.session_state:
 choice = st.sidebar.radio("", menu, index=menu.index(st.session_state.navigation_choice))
 st.session_state.navigation_choice = choice
 
+desc = menu_descriptions.get(choice, "")
+st.sidebar.markdown(f"""
+<div style="margin:4px 4px 16px 4px; padding:10px 14px; background:rgba(139,92,246,0.07);
+            border-left:3px solid #8B5CF6; border-radius:0 8px 8px 0;">
+    <div style="font-size:0.72rem; color:#94A3B8; font-family:'Space Grotesk',sans-serif;">{desc}</div>
+</div>
+""", unsafe_allow_html=True)
+
 # Sidebar footer status
 st.sidebar.markdown("""
 <div style="margin-top:auto; padding:16px 10px; border-top:1px solid rgba(139,92,246,0.1);">
     <div style="display:flex;align-items:center;gap:8px;font-size:0.78rem;color:#475569;font-family:'Space Grotesk',sans-serif;">
         <div style="width:8px;height:8px;border-radius:50%;background:#34D399;box-shadow:0 0 6px #34D399;animation:pulse-ring 2s ease infinite;"></div>
-        Backend Connected
+        Backend Connected · Splunk Live
     </div>
-    <div style="font-size:0.7rem;color:#334155;margin-top:4px;">192.168.86.178 · Port 8000</div>
+    <div style="font-size:0.7rem;color:#334155;margin-top:4px;">192.168.86.178 · Port 8000 · index=ai_agent_logs</div>
 </div>
 """, unsafe_allow_html=True)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+#  PAGE: OVERVIEW (HOME)
+# ─────────────────────────────────────────────────────────────────────────────
+if choice == "🏠 Overview":
+    # Hero
+    st.markdown("""
+    <div style="animation:slide-in-up 0.5s ease; text-align:center; padding:40px 0 20px 0;">
+        <div style="font-size:4rem; animation:float 3s ease infinite; display:inline-block;">🛡️</div>
+        <h1 style="margin:12px 0 6px 0; font-size:2.8rem;
+                   background:linear-gradient(135deg,#8B5CF6,#EC4899,#06B6D4);
+                   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+            AgentShield for Splunk
+        </h1>
+        <p style="color:#94A3B8; font-size:1.1rem; font-family:'Space Grotesk',sans-serif; max-width:620px; margin:0 auto 8px auto;">
+            Real-time AI Agent Security &amp; Observability — built on Splunk Enterprise
+        </p>
+        <div style="display:inline-block; padding:6px 18px; background:rgba(52,211,153,0.12);
+                    border:1px solid rgba(52,211,153,0.3); border-radius:99px;
+                    font-size:0.78rem; color:#34D399; font-family:'Space Grotesk',sans-serif; letter-spacing:0.05em;">
+            ● LIVE · Claude AI Agent + Splunk HEC + SPL Detections
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Live stats from log file
+    _lp = "data/ai_agent_logs.jsonl"
+    if not os.path.exists(_lp):
+        _lp = "../data/ai_agent_logs.jsonl"
+    try:
+        _df = pd.read_json(_lp, lines=True)
+        _df = _df[_df["prompt"].notna()].copy() if "prompt" in _df.columns else _df
+        _total   = len(_df)
+        _threats = int((_df["severity"].isin(["critical","high"])).sum()) if "severity" in _df.columns else 0
+        _blocked = int((_df["tool_allowed"] == False).sum()) if "tool_allowed" in _df.columns else 0
+        _cost    = _df["estimated_cost_usd"].sum() if "estimated_cost_usd" in _df.columns else 0
+        _inject  = int((_df["injection_score"] >= 70).sum()) if "injection_score" in _df.columns else 0
+    except Exception:
+        _total = _threats = _blocked = _cost = _inject = 0
+
+    s1, s2, s3, s4, s5 = st.columns(5)
+    for col, val, lbl, color, icon in [
+        (s1, f"{_total:,}",   "Total Requests",    "#8B5CF6", "⚡"),
+        (s2, f"{_threats:,}", "Threats Detected",  "#EF4444", "🚨"),
+        (s3, f"{_blocked:,}", "Attacks Blocked",   "#F59E0B", "🚫"),
+        (s4, f"{_inject:,}",  "Injection Alerts",  "#EC4899", "💉"),
+        (s5, f"${_cost:.3f}", "Total Agent Cost",  "#10B981", "💰"),
+    ]:
+        col.markdown(metric_card_html(lbl, val, "since deployment", color, icon), unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # What is AgentShield
+    st.markdown("""
+    <div style="text-align:center; margin-bottom:20px;">
+        <h2 style="font-size:1.5rem; color:#F1F5F9; margin-bottom:4px;">What does AgentShield do?</h2>
+        <p style="color:#64748B; font-size:0.88rem; font-family:'Space Grotesk',sans-serif;">
+            Three capabilities working together to secure your AI agents
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    c1, c2, c3 = st.columns(3)
+    for col, icon, title, color, points in [
+        (c1, "👁️", "Monitor", "#8B5CF6", [
+            "Every agent request logged in real time",
+            "Latency, token usage & cost tracked",
+            "Risk scores computed per transaction",
+            "Streaming into Splunk via HEC",
+        ]),
+        (c2, "🔍", "Detect", "#EF4444", [
+            "Prompt injection attack detection",
+            "PII & secret leakage scanning",
+            "Unauthorized tool-call interception",
+            "9 SPL detection rules in Splunk",
+        ]),
+        (c3, "⚡", "Respond", "#10B981", [
+            "Automated case creation for incidents",
+            "SOC playbooks with step-by-step guidance",
+            "Claude AI generates incident summaries",
+            "Policy enforcement & budget limits",
+        ]),
+    ]:
+        items_html = "".join(f'<div style="display:flex;gap:8px;margin-bottom:6px;"><span style="color:{color};">▸</span><span style="color:#CBD5E1;font-size:0.83rem;">{p}</span></div>' for p in points)
+        col.markdown(f"""
+        <div class="shield-card" style="border-color:{color}33;min-height:220px;">
+            <div style="font-size:2rem;margin-bottom:10px;">{icon}</div>
+            <div style="font-size:1.1rem;font-weight:700;color:{color};font-family:'Space Grotesk',sans-serif;margin-bottom:14px;">{title}</div>
+            {items_html}
+        </div>
+        """, unsafe_allow_html=True)
+
+    # How it works flow
+    st.markdown("""
+    <div style="margin:8px 0 20px 0; text-align:center;">
+        <h2 style="font-size:1.5rem; color:#F1F5F9; margin-bottom:16px;">How It Works</h2>
+        <div style="display:flex; align-items:center; justify-content:center; gap:0; flex-wrap:wrap;">
+            <div style="text-align:center; padding:16px 20px; background:rgba(139,92,246,0.1); border:1px solid rgba(139,92,246,0.3); border-radius:12px; min-width:110px;">
+                <div style="font-size:1.6rem;">🤖</div>
+                <div style="font-size:0.75rem; color:#A78BFA; font-weight:600; margin-top:4px; font-family:'Space Grotesk',sans-serif;">Claude Agent</div>
+                <div style="font-size:0.65rem; color:#475569; margin-top:2px;">Handles user requests</div>
+            </div>
+            <div style="color:#8B5CF6; font-size:1.4rem; padding:0 8px;">→</div>
+            <div style="text-align:center; padding:16px 20px; background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.3); border-radius:12px; min-width:110px;">
+                <div style="font-size:1.6rem;">🛡️</div>
+                <div style="font-size:0.75rem; color:#06B6D4; font-weight:600; margin-top:4px; font-family:'Space Grotesk',sans-serif;">AgentShield API</div>
+                <div style="font-size:0.65rem; color:#475569; margin-top:2px;">Scores every transaction</div>
+            </div>
+            <div style="color:#8B5CF6; font-size:1.4rem; padding:0 8px;">→</div>
+            <div style="text-align:center; padding:16px 20px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:12px; min-width:110px;">
+                <div style="font-size:1.6rem;">📡</div>
+                <div style="font-size:0.75rem; color:#F87171; font-weight:600; margin-top:4px; font-family:'Space Grotesk',sans-serif;">Splunk HEC</div>
+                <div style="font-size:0.65rem; color:#475569; margin-top:2px;">Indexes all events</div>
+            </div>
+            <div style="color:#8B5CF6; font-size:1.4rem; padding:0 8px;">→</div>
+            <div style="text-align:center; padding:16px 20px; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); border-radius:12px; min-width:110px;">
+                <div style="font-size:1.6rem;">🔎</div>
+                <div style="font-size:0.75rem; color:#34D399; font-weight:600; margin-top:4px; font-family:'Space Grotesk',sans-serif;">SPL Detections</div>
+                <div style="font-size:0.65rem; color:#475569; margin-top:2px;">9 alert rules fire</div>
+            </div>
+            <div style="color:#8B5CF6; font-size:1.4rem; padding:0 8px;">→</div>
+            <div style="text-align:center; padding:16px 20px; background:rgba(236,72,153,0.1); border:1px solid rgba(236,72,153,0.3); border-radius:12px; min-width:110px;">
+                <div style="font-size:1.6rem;">📊</div>
+                <div style="font-size:0.75rem; color:#F472B6; font-weight:600; margin-top:4px; font-family:'Space Grotesk',sans-serif;">This Dashboard</div>
+                <div style="font-size:0.65rem; color:#475569; margin-top:2px;">Visualize & respond</div>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Navigation guide for judges
+    st.markdown("""
+    <div style="margin-top:8px;">
+        <h2 style="font-size:1.3rem; color:#F1F5F9; margin-bottom:14px;">
+            Judge's Guide — Where to look
+        </h2>
+    </div>
+    """, unsafe_allow_html=True)
+
+    g1, g2 = st.columns(2)
+    for col, items in [
+        (g1, [
+            ("📊 Observability",  "#8B5CF6", "Live risk scores, latency charts, cost trends, PII detections"),
+            ("🚀 Simulate",       "#06B6D4", "Run a real Claude attack scenario and watch it get detected"),
+            ("📋 Case Hub",       "#F59E0B", "Triaged incident cases auto-created from attack events"),
+            ("🔍 Investigate",    "#EC4899", "Click any case → Claude generates an AI incident summary"),
+        ]),
+        (g2, [
+            ("🧪 Model Arena",    "#34D399", "Compare safety & performance across Claude model variants"),
+            ("💰 Budget Monitor", "#F97316", "Per-session token limits and cost enforcement in action"),
+            ("📜 Policies",       "#A78BFA", "Security rules: block injection, PII, unauthorized tools"),
+            ("📈 Baselines",      "#06B6D4", "Behavioral norms — anomaly bands for normal vs attack traffic"),
+        ]),
+    ]:
+        for label, color, desc_text in items:
+            col.markdown(f"""
+            <div style="display:flex;gap:12px;align-items:flex-start;padding:12px 16px;margin-bottom:8px;
+                        background:rgba(15,15,40,0.6);border:1px solid {color}22;border-radius:10px;
+                        border-left:3px solid {color};">
+                <div style="font-size:1.1rem;min-width:28px;">{label.split()[0]}</div>
+                <div>
+                    <div style="font-size:0.85rem;font-weight:600;color:{color};font-family:'Space Grotesk',sans-serif;">{" ".join(label.split()[1:])}</div>
+                    <div style="font-size:0.78rem;color:#64748B;margin-top:2px;">{desc_text}</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+# ─────────────────────────────────────────────────────────────────────────────
 #  PAGE: OBSERVABILITY
 # ─────────────────────────────────────────────────────────────────────────────
-if choice == "📊 Observability":
+elif choice == "📊 Observability":
     st.markdown("""
     <div style="animation:slide-in-up 0.5s ease;">
         <h1 style="margin:0;font-size:2rem;background:linear-gradient(135deg,#8B5CF6,#EC4899);
