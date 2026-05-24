@@ -907,6 +907,16 @@ elif choice == "📊 Observability":
         </span>
     </div>
     """, unsafe_allow_html=True)
+
+    # Auto-refresh controls
+    _rc1, _rc2, _rc3 = st.columns([2, 1, 1])
+    with _rc1:
+        auto_refresh = st.toggle("Auto-refresh", value=True, help="Refreshes every 15 seconds")
+    with _rc2:
+        refresh_interval = st.selectbox("Interval", [15, 30, 60], index=0, label_visibility="collapsed")
+    with _rc3:
+        st.markdown(f"<div style='padding-top:8px;font-size:0.75rem;color:#475569;'>Last updated: {datetime.datetime.utcnow().strftime('%H:%M:%S')} UTC</div>", unsafe_allow_html=True)
+
     shimmer()
 
     log_path = "data/ai_agent_logs.jsonl"
@@ -1153,6 +1163,11 @@ elif choice == "📊 Observability":
             st.info("💡 No agent transactions found. Run simulations in **Simulate** to generate data.")
     except Exception as e:
         st.info("💡 No telemetry logs available yet. Head to **Simulate** to generate traffic.")
+
+    # Auto-refresh: sleep then rerun
+    if auto_refresh:
+        time.sleep(refresh_interval)
+        st.rerun()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
