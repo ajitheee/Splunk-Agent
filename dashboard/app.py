@@ -892,10 +892,7 @@ if choice == "🏠 Overview":
 elif choice == "📊 Observability":
     st.markdown("""
     <div style="animation:slide-in-up 0.5s ease;">
-        <h1 style="margin:0;font-size:2rem;background:linear-gradient(135deg,#00E5FF,#7C3AED);
-                   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
-            📊 Agent Observability
-        </h1>
+        <div style="margin:0;"><span style="font-size:2rem;font-weight:800;font-family:&apos;Space Grotesk&apos;,sans-serif;display:inline-block;background:linear-gradient(135deg,#00E5FF,#7C3AED);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-0.02em;">📊 Agent Observability</span></div>
         <p style="color:#94A3B8;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
             Real-time telemetry · Token analytics · Threat intelligence · Cost tracking
         </p>
@@ -1164,10 +1161,7 @@ elif choice == "📊 Observability":
 elif choice == "📋 Case Hub":
     st.markdown("""
     <div style="animation:slide-in-up 0.5s ease;">
-        <h1 style="margin:0;font-size:2rem;background:linear-gradient(135deg,#FF6B35,#7C3AED);
-                   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
-            📋 Case Management Hub
-        </h1>
+        <div style="margin:0;"><span style="font-size:2rem;font-weight:800;font-family:&apos;Space Grotesk&apos;,sans-serif;display:inline-block;background:linear-gradient(135deg,#FF6B35,#7C3AED);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-0.02em;">📋 Case Management Hub</span></div>
         <p style="color:#94A3B8;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
             Auto-generated incidents · Analyst assignments · Threat lifecycle management
         </p>
@@ -1351,10 +1345,7 @@ elif choice == "📋 Case Hub":
 elif choice == "🔍 Investigate":
     st.markdown("""
     <div style="animation:slide-in-up 0.5s ease;">
-        <h1 style="margin:0;font-size:2rem;background:linear-gradient(135deg,#00E5FF,#FF6B35);
-                   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
-            🔍 Incident Investigation & Playbook Center
-        </h1>
+        <div style="margin:0;"><span style="font-size:2rem;font-weight:800;font-family:&apos;Space Grotesk&apos;,sans-serif;display:inline-block;background:linear-gradient(135deg,#00E5FF,#FF6B35);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-0.02em;">🔍 Incident Investigation & Playbook Center</span></div>
         <p style="color:#94A3B8;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
             Forensic timelines · Claude AI summaries · Automated containment playbooks
         </p>
@@ -1604,10 +1595,7 @@ elif choice == "🔍 Investigate":
 elif choice == "🚀 Simulate":
     st.markdown("""
     <div style="animation:slide-in-up 0.5s ease;">
-        <h1 style="margin:0;font-size:2rem;background:linear-gradient(135deg,#00C853,#00E5FF);
-                   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
-            🚀 Threat Simulation Console
-        </h1>
+        <div style="margin:0;"><span style="font-size:2rem;font-weight:800;font-family:&apos;Space Grotesk&apos;,sans-serif;display:inline-block;background:linear-gradient(135deg,#00C853,#00E5FF);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-0.02em;">🚀 Threat Simulation Console</span></div>
         <p style="color:#94A3B8;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
             Real Claude AI agent · Live attack scenarios · End-to-end detection validation
         </p>
@@ -1795,10 +1783,7 @@ elif choice == "🚀 Simulate":
 elif choice == "🧪 Model Arena":
     st.markdown("""
     <div style="animation:slide-in-up 0.5s ease;">
-        <h1 style="margin:0;font-size:2rem;background:linear-gradient(135deg,#FBBF24,#00E5FF);
-                   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
-            🧪 Model Comparison Arena
-        </h1>
+        <div style="margin:0;"><span style="font-size:2rem;font-weight:800;font-family:&apos;Space Grotesk&apos;,sans-serif;display:inline-block;background:linear-gradient(135deg,#FBBF24,#00E5FF);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-0.02em;">🧪 Model Comparison Arena</span></div>
         <p style="color:#94A3B8;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
             Cost · Latency · Safety score · Quality — compared across every simulation run
         </p>
@@ -1941,10 +1926,7 @@ elif choice == "🧪 Model Arena":
 elif choice == "💰 Budget Monitor":
     st.markdown("""
     <div style="animation:slide-in-up 0.5s ease;">
-        <h1 style="margin:0;font-size:2rem;background:linear-gradient(135deg,#00C853,#FBBF24);
-                   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
-            💰 Dynamic Budget Monitor
-        </h1>
+        <div style="margin:0;"><span style="font-size:2rem;font-weight:800;font-family:&apos;Space Grotesk&apos;,sans-serif;display:inline-block;background:linear-gradient(135deg,#00C853,#FBBF24);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-0.02em;">💰 Dynamic Budget Monitor</span></div>
         <p style="color:#94A3B8;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
             Per-session token limits · Daily cost caps · Auto-enforcement when limits are hit
         </p>
@@ -2089,10 +2071,7 @@ elif choice == "💰 Budget Monitor":
 elif choice == "📜 Policies":
     st.markdown("""
     <div style="animation:slide-in-up 0.5s ease;">
-        <h1 style="margin:0;font-size:2rem;background:linear-gradient(135deg,#FF6B35,#FBBF24);
-                   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
-            📜 Policy-as-Code Engine
-        </h1>
+        <div style="margin:0;"><span style="font-size:2rem;font-weight:800;font-family:&apos;Space Grotesk&apos;,sans-serif;display:inline-block;background:linear-gradient(135deg,#FF6B35,#FBBF24);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-0.02em;">📜 Policy-as-Code Engine</span></div>
         <p style="color:#94A3B8;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
             Live rule enforcement · Toggle rules on/off · Block injections, PII leaks & unauthorized tools
         </p>
@@ -2179,10 +2158,7 @@ elif choice == "📜 Policies":
 elif choice == "📈 Baselines":
     st.markdown("""
     <div style="animation:slide-in-up 0.5s ease;">
-        <h1 style="margin:0;font-size:2rem;background:linear-gradient(135deg,#7C3AED,#00E5FF);
-                   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
-            📈 Behavioral Baselines & Anomaly Detection
-        </h1>
+        <div style="margin:0;"><span style="font-size:2rem;font-weight:800;font-family:&apos;Space Grotesk&apos;,sans-serif;display:inline-block;background:linear-gradient(135deg,#7C3AED,#00E5FF);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-0.02em;">📈 Behavioral Baselines & Anomaly Detection</span></div>
         <p style="color:#94A3B8;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
             3-sigma statistical thresholds · Real-time drift detection · Attack vs normal separation
         </p>
