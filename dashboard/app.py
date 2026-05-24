@@ -549,7 +549,7 @@ def metric_card_html(label, value, sub="", color="#8B5CF6", icon=""):
     <div class="metric-card" style="border-color: {color}22;">
         <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,{color},{color}88);border-radius:14px 14px 0 0;"></div>
         <div class="label">{icon} {label}</div>
-        <div class="value" style="background:linear-gradient(135deg,{color},{color}CC);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">{value}</div>
+        <div class="value" style="color:{color};">{value}</div>
         <div class="sub">{sub}</div>
     </div>
     """
@@ -576,9 +576,7 @@ st.sidebar.markdown("""
 <div style="padding: 20px 10px 10px 10px; text-align: center;">
     <div style="font-size:2.8rem; animation: float 3s ease infinite; display:inline-block;">🛡️</div>
     <div style="font-family:'Space Grotesk',sans-serif; font-size:1.3rem; font-weight:800;
-                background:linear-gradient(135deg,#00E5FF,#7C3AED,#FF6B35);
-                -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-                letter-spacing:-0.02em; margin-top:4px;">AgentShield</div>
+                color:#00E5FF;letter-spacing:-0.02em; margin-top:4px;">AgentShield</div>
     <div style="font-size:0.72rem; color:#475569; letter-spacing:0.06em; text-transform:uppercase;
                 font-family:'Space Grotesk',sans-serif; margin-top:2px;">Security Copilot for Splunk</div>
 </div>
@@ -635,8 +633,7 @@ if choice == "🏠 Overview":
     <div style="animation:slide-in-up 0.5s ease; text-align:center; padding:40px 0 20px 0;">
         <div style="font-size:4rem; animation:float 3s ease infinite; display:inline-block;">🛡️</div>
         <h1 style="margin:12px 0 6px 0; font-size:2.8rem;
-                   background:linear-gradient(135deg,#8B5CF6,#EC4899,#06B6D4);
-                   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+                   color:#00E5FF;">
             AgentShield for Splunk
         </h1>
         <p style="color:#94A3B8; font-size:1.1rem; font-family:'Space Grotesk',sans-serif; max-width:620px; margin:0 auto 8px auto;">
@@ -892,7 +889,7 @@ if choice == "🏠 Overview":
 elif choice == "📊 Observability":
     st.markdown("""
     <div style="animation:slide-in-up 0.5s ease;">
-        <div style="margin:0;"><span style="font-size:2rem;font-weight:800;font-family:&apos;Space Grotesk&apos;,sans-serif;display:inline-block;background:linear-gradient(135deg,#00E5FF,#7C3AED);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-0.02em;">📊 Agent Observability</span></div>
+        <div style="margin:0;"><span style="font-size:2rem;font-weight:800;font-family:Space Grotesk,sans-serif;display:inline-block;color:#00E5FF;letter-spacing:-0.02em;">📊 Agent Observability</span></div>
         <p style="color:#94A3B8;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
             Real-time telemetry · Token analytics · Threat intelligence · Cost tracking
         </p>
@@ -1176,7 +1173,7 @@ elif choice == "📊 Observability":
 elif choice == "📋 Case Hub":
     st.markdown("""
     <div style="animation:slide-in-up 0.5s ease;">
-        <div style="margin:0;"><span style="font-size:2rem;font-weight:800;font-family:&apos;Space Grotesk&apos;,sans-serif;display:inline-block;background:linear-gradient(135deg,#FF6B35,#7C3AED);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-0.02em;">📋 Case Management Hub</span></div>
+        <div style="margin:0;"><span style="font-size:2rem;font-weight:800;font-family:Space Grotesk,sans-serif;display:inline-block;color:#FF6B35;letter-spacing:-0.02em;">📋 Case Management Hub</span></div>
         <p style="color:#94A3B8;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
             Auto-generated incidents · Analyst assignments · Threat lifecycle management
         </p>
@@ -1360,7 +1357,7 @@ elif choice == "📋 Case Hub":
 elif choice == "🔍 Investigate":
     st.markdown("""
     <div style="animation:slide-in-up 0.5s ease;">
-        <div style="margin:0;"><span style="font-size:2rem;font-weight:800;font-family:&apos;Space Grotesk&apos;,sans-serif;display:inline-block;background:linear-gradient(135deg,#00E5FF,#FF6B35);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-0.02em;">🔍 Incident Investigation & Playbook Center</span></div>
+        <div style="margin:0;"><span style="font-size:2rem;font-weight:800;font-family:Space Grotesk,sans-serif;display:inline-block;color:#00E5FF;letter-spacing:-0.02em;">🔍 Incident Investigation & Playbook Center</span></div>
         <p style="color:#94A3B8;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
             Forensic timelines · Claude AI summaries · Automated containment playbooks
         </p>
@@ -1610,7 +1607,7 @@ elif choice == "🔍 Investigate":
 elif choice == "🚀 Simulate":
     st.markdown("""
     <div style="animation:slide-in-up 0.5s ease;">
-        <div style="margin:0;"><span style="font-size:2rem;font-weight:800;font-family:&apos;Space Grotesk&apos;,sans-serif;display:inline-block;background:linear-gradient(135deg,#00C853,#00E5FF);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-0.02em;">🚀 Threat Simulation Console</span></div>
+        <div style="margin:0;"><span style="font-size:2rem;font-weight:800;font-family:Space Grotesk,sans-serif;display:inline-block;color:#00C853;letter-spacing:-0.02em;">🚀 Threat Simulation Console</span></div>
         <p style="color:#94A3B8;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
             Real Claude AI agent · Live attack scenarios · End-to-end detection validation
         </p>
@@ -1798,7 +1795,7 @@ elif choice == "🚀 Simulate":
 elif choice == "🧪 Model Arena":
     st.markdown("""
     <div style="animation:slide-in-up 0.5s ease;">
-        <div style="margin:0;"><span style="font-size:2rem;font-weight:800;font-family:&apos;Space Grotesk&apos;,sans-serif;display:inline-block;background:linear-gradient(135deg,#FBBF24,#00E5FF);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-0.02em;">🧪 Model Comparison Arena</span></div>
+        <div style="margin:0;"><span style="font-size:2rem;font-weight:800;font-family:Space Grotesk,sans-serif;display:inline-block;color:#FBBF24;letter-spacing:-0.02em;">🧪 Model Comparison Arena</span></div>
         <p style="color:#94A3B8;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
             Cost · Latency · Safety score · Quality — compared across every simulation run
         </p>
@@ -1941,7 +1938,7 @@ elif choice == "🧪 Model Arena":
 elif choice == "💰 Budget Monitor":
     st.markdown("""
     <div style="animation:slide-in-up 0.5s ease;">
-        <div style="margin:0;"><span style="font-size:2rem;font-weight:800;font-family:&apos;Space Grotesk&apos;,sans-serif;display:inline-block;background:linear-gradient(135deg,#00C853,#FBBF24);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-0.02em;">💰 Dynamic Budget Monitor</span></div>
+        <div style="margin:0;"><span style="font-size:2rem;font-weight:800;font-family:Space Grotesk,sans-serif;display:inline-block;color:#00C853;letter-spacing:-0.02em;">💰 Dynamic Budget Monitor</span></div>
         <p style="color:#94A3B8;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
             Per-session token limits · Daily cost caps · Auto-enforcement when limits are hit
         </p>
@@ -2086,7 +2083,7 @@ elif choice == "💰 Budget Monitor":
 elif choice == "📜 Policies":
     st.markdown("""
     <div style="animation:slide-in-up 0.5s ease;">
-        <div style="margin:0;"><span style="font-size:2rem;font-weight:800;font-family:&apos;Space Grotesk&apos;,sans-serif;display:inline-block;background:linear-gradient(135deg,#FF6B35,#FBBF24);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-0.02em;">📜 Policy-as-Code Engine</span></div>
+        <div style="margin:0;"><span style="font-size:2rem;font-weight:800;font-family:Space Grotesk,sans-serif;display:inline-block;color:#FF6B35;letter-spacing:-0.02em;">📜 Policy-as-Code Engine</span></div>
         <p style="color:#94A3B8;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
             Live rule enforcement · Toggle rules on/off · Block injections, PII leaks & unauthorized tools
         </p>
@@ -2173,7 +2170,7 @@ elif choice == "📜 Policies":
 elif choice == "📈 Baselines":
     st.markdown("""
     <div style="animation:slide-in-up 0.5s ease;">
-        <div style="margin:0;"><span style="font-size:2rem;font-weight:800;font-family:&apos;Space Grotesk&apos;,sans-serif;display:inline-block;background:linear-gradient(135deg,#7C3AED,#00E5FF);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-0.02em;">📈 Behavioral Baselines & Anomaly Detection</span></div>
+        <div style="margin:0;"><span style="font-size:2rem;font-weight:800;font-family:Space Grotesk,sans-serif;display:inline-block;color:#7C3AED;letter-spacing:-0.02em;">📈 Behavioral Baselines & Anomaly Detection</span></div>
         <p style="color:#94A3B8;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
             3-sigma statistical thresholds · Real-time drift detection · Attack vs normal separation
         </p>
