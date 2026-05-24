@@ -25,13 +25,13 @@ st.markdown("""
 
 /* ── KEYFRAME ANIMATIONS ── */
 @keyframes pulse-ring {
-  0%   { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.6); }
-  70%  { box-shadow: 0 0 0 12px rgba(139, 92, 246, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); }
+  0%   { box-shadow: 0 0 0 0 rgba(0,229,255,0.5); }
+  70%  { box-shadow: 0 0 0 12px rgba(0,229,255,0); }
+  100% { box-shadow: 0 0 0 0 rgba(0,229,255,0); }
 }
 @keyframes glow-red {
-  0%, 100% { box-shadow: 0 0 8px rgba(239, 68, 68, 0.5); }
-  50%       { box-shadow: 0 0 22px rgba(239, 68, 68, 0.9), 0 0 40px rgba(239, 68, 68, 0.3); }
+  0%, 100% { box-shadow: 0 0 8px rgba(255,107,53,0.5); }
+  50%       { box-shadow: 0 0 24px rgba(255,107,53,0.9), 0 0 48px rgba(255,107,53,0.3); }
 }
 @keyframes slide-in-left {
   from { opacity: 0; transform: translateX(-24px); }
@@ -45,13 +45,31 @@ st.markdown("""
   0%   { background-position: -200% center; }
   100% { background-position: 200% center; }
 }
-@keyframes orbit {
-  from { transform: rotate(0deg) translateX(6px) rotate(0deg); }
-  to   { transform: rotate(360deg) translateX(6px) rotate(-360deg); }
-}
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
   50%       { transform: translateY(-6px); }
+}
+@keyframes flow-packet {
+  0%   { left: -2%; opacity: 0; }
+  5%   { opacity: 1; }
+  95%  { opacity: 1; }
+  100% { left: 102%; opacity: 0; }
+}
+@keyframes flow-packet-blocked {
+  0%   { left: -2%; opacity: 0; transform: scale(1); }
+  5%   { opacity: 1; }
+  48%  { left: 52%; transform: scale(1); }
+  55%  { left: 54%; transform: scale(2.5); opacity: 0.9; }
+  60%  { left: 55%; transform: scale(0); opacity: 0; }
+  100% { left: 55%; opacity: 0; }
+}
+@keyframes node-ping {
+  0%,100% { box-shadow: 0 0 0 0 rgba(0,229,255,0.4); }
+  50%      { box-shadow: 0 0 0 10px rgba(0,229,255,0); }
+}
+@keyframes node-alert {
+  0%,100% { box-shadow: 0 0 0 0 rgba(255,107,53,0.6); }
+  50%      { box-shadow: 0 0 0 14px rgba(255,107,53,0); }
 }
 @keyframes scan-line {
   0%   { top: 0; opacity: 0.4; }
@@ -62,29 +80,27 @@ st.markdown("""
 html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"],
 .main, [data-testid="stApp"], section.main {
     font-family: 'Inter', sans-serif !important;
-    background: #04051A !important;
+    background: #0D1117 !important;
     color: #E2E8F0 !important;
 }
 
 [data-testid="stHeader"] { background: transparent !important; }
 
-/* Animated background grid */
+/* Subtle dot-grid background */
 [data-testid="stAppViewContainer"]::before {
     content: '';
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    background-image:
-        linear-gradient(rgba(139, 92, 246, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(139, 92, 246, 0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
+    background-image: radial-gradient(rgba(0,229,255,0.06) 1px, transparent 1px);
+    background-size: 28px 28px;
     pointer-events: none;
     z-index: 0;
 }
 
 /* ── SIDEBAR ── */
 [data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #060820 0%, #0A0C24 100%) !important;
-    border-right: 1px solid rgba(139, 92, 246, 0.15) !important;
+    background: linear-gradient(180deg, #0D1117 0%, #161B22 100%) !important;
+    border-right: 1px solid rgba(0,229,255,0.12) !important;
 }
 
 [data-testid="stSidebar"]::before {
@@ -92,7 +108,7 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"],
     position: absolute;
     top: 0; left: 0; right: 0;
     height: 3px;
-    background: linear-gradient(90deg, #8B5CF6, #EC4899, #06B6D4);
+    background: linear-gradient(90deg, #00E5FF, #7C3AED, #FF6B35);
 }
 
 /* ── TYPOGRAPHY ── */
@@ -105,8 +121,8 @@ h1, h2, h3, h4, h5, h6 {
 
 /* ── CARDS ── */
 .shield-card {
-    background: linear-gradient(135deg, rgba(15, 15, 40, 0.85) 0%, rgba(8, 8, 28, 0.95) 100%);
-    border: 1px solid rgba(139, 92, 246, 0.12);
+    background: linear-gradient(135deg, rgba(22,27,46,0.9) 0%, rgba(13,17,23,0.97) 100%);
+    border: 1px solid rgba(0,229,255,0.1);
     border-radius: 16px;
     padding: 24px;
     margin-bottom: 16px;
@@ -122,7 +138,7 @@ h1, h2, h3, h4, h5, h6 {
     position: absolute;
     top: 0; left: 0; right: 0;
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.5), transparent);
+    background: linear-gradient(90deg, transparent, rgba(0,229,255,0.4), transparent);
     opacity: 0;
     transition: opacity 0.3s;
 }
@@ -131,16 +147,16 @@ h1, h2, h3, h4, h5, h6 {
 
 .shield-card:hover {
     transform: translateY(-5px);
-    border-color: rgba(139, 92, 246, 0.35);
-    box-shadow: 0 20px 40px -15px rgba(139, 92, 246, 0.25), 0 0 0 1px rgba(139, 92, 246, 0.1);
+    border-color: rgba(0,229,255,0.3);
+    box-shadow: 0 20px 40px -15px rgba(0,229,255,0.15), 0 0 0 1px rgba(0,229,255,0.08);
 }
 
 /* ── METRIC CARDS ── */
 .metric-card {
-    background: linear-gradient(135deg, rgba(15, 15, 40, 0.9) 0%, rgba(10, 10, 30, 0.95) 100%);
+    background: linear-gradient(135deg, rgba(22,27,46,0.95) 0%, rgba(13,17,23,0.98) 100%);
     border-radius: 14px;
     padding: 20px 22px;
-    border: 1px solid rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.07);
     position: relative;
     overflow: hidden;
     transition: all 0.3s ease;
@@ -157,7 +173,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .metric-card:hover {
     transform: translateY(-3px);
-    border-color: rgba(139, 92, 246, 0.3);
+    border-color: rgba(0,229,255,0.25);
 }
 
 .metric-card .label {
@@ -199,8 +215,8 @@ h1, h2, h3, h4, h5, h6 {
 
 /* ── INCIDENT CARDS ── */
 .incident-card {
-    background: linear-gradient(135deg, rgba(12, 12, 35, 0.95) 0%, rgba(8, 8, 24, 0.98) 100%);
-    border: 1px solid rgba(255,255,255,0.05);
+    background: linear-gradient(135deg, rgba(22,27,46,0.95) 0%, rgba(13,17,23,0.98) 100%);
+    border: 1px solid rgba(255,255,255,0.06);
     border-radius: 14px;
     padding: 20px 22px;
     margin-bottom: 12px;
@@ -212,7 +228,8 @@ h1, h2, h3, h4, h5, h6 {
 
 .incident-card:hover {
     transform: translateX(4px);
-    box-shadow: -4px 0 30px -5px rgba(139, 92, 246, 0.2);
+    box-shadow: -4px 0 30px -5px rgba(0,229,255,0.15);
+    border-color: rgba(0,229,255,0.2);
 }
 
 /* ── TIMELINE ── */
@@ -227,7 +244,7 @@ h1, h2, h3, h4, h5, h6 {
     position: absolute;
     left: 8px; top: 0; bottom: 0;
     width: 2px;
-    background: linear-gradient(180deg, #8B5CF6, #EC4899, rgba(6, 182, 212, 0.2));
+    background: linear-gradient(180deg, #00E5FF, #7C3AED, rgba(255,107,53,0.2));
     border-radius: 99px;
 }
 
@@ -244,18 +261,18 @@ h1, h2, h3, h4, h5, h6 {
     width: 16px;
     height: 16px;
     border-radius: 50%;
-    border: 3px solid #04051A;
+    border: 3px solid #0D1117;
 }
 
-.tl-dot.threat { background: #EF4444; animation: glow-red 2s ease infinite; }
-.tl-dot.action { background: #10B981; animation: pulse-ring 2s ease infinite; }
-.tl-dot.info   { background: #06B6D4; }
+.tl-dot.threat { background: #FF6B35; animation: glow-red 2s ease infinite; }
+.tl-dot.action { background: #00C853; animation: pulse-ring 2s ease infinite; }
+.tl-dot.info   { background: #00E5FF; }
 
 /* ── BUTTONS ── */
 div.stButton > button {
-    background: linear-gradient(135deg, #4C1D95 0%, #7C3AED 50%, #8B5CF6 100%) !important;
+    background: linear-gradient(135deg, #0E4D6E 0%, #0A7EA4 50%, #00B4D8 100%) !important;
     color: #FFFFFF !important;
-    border: 1px solid rgba(139, 92, 246, 0.3) !important;
+    border: 1px solid rgba(0,229,255,0.3) !important;
     border-radius: 10px !important;
     font-weight: 600 !important;
     padding: 10px 24px !important;
@@ -267,34 +284,26 @@ div.stButton > button {
     overflow: hidden !important;
 }
 
-div.stButton > button::after {
-    content: '' !important;
-    position: absolute !important;
-    inset: 0 !important;
-    background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.08) 100%) !important;
-    transition: opacity 0.3s !important;
-}
-
 div.stButton > button:hover {
     transform: translateY(-2px) !important;
-    box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4), 0 0 0 1px rgba(139, 92, 246, 0.3) !important;
+    box-shadow: 0 8px 25px rgba(0,180,216,0.4), 0 0 0 1px rgba(0,229,255,0.3) !important;
 }
 
 div.stButton > button[kind="primary"],
 div.stButton > button[type="primary"] {
-    background: linear-gradient(135deg, #7F1D1D 0%, #B91C1C 50%, #EF4444 100%) !important;
-    border-color: rgba(239, 68, 68, 0.3) !important;
+    background: linear-gradient(135deg, #7F1D1D 0%, #B91C1C 50%, #FF6B35 100%) !important;
+    border-color: rgba(255,107,53,0.3) !important;
 }
 
 div.stButton > button[kind="primary"]:hover,
 div.stButton > button[type="primary"]:hover {
-    box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4) !important;
+    box-shadow: 0 8px 25px rgba(255,107,53,0.4) !important;
 }
 
 /* ── INPUTS & SELECTS ── */
 div[data-baseweb="select"] > div {
-    background: rgba(15, 15, 40, 0.8) !important;
-    border: 1px solid rgba(139, 92, 246, 0.2) !important;
+    background: rgba(22,27,46,0.9) !important;
+    border: 1px solid rgba(0,229,255,0.15) !important;
     border-radius: 10px !important;
     color: #E2E8F0 !important;
     transition: border-color 0.2s !important;
@@ -567,7 +576,7 @@ st.sidebar.markdown("""
 <div style="padding: 20px 10px 10px 10px; text-align: center;">
     <div style="font-size:2.8rem; animation: float 3s ease infinite; display:inline-block;">🛡️</div>
     <div style="font-family:'Space Grotesk',sans-serif; font-size:1.3rem; font-weight:800;
-                background:linear-gradient(135deg,#8B5CF6,#EC4899,#06B6D4);
+                background:linear-gradient(135deg,#00E5FF,#7C3AED,#FF6B35);
                 -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
                 letter-spacing:-0.02em; margin-top:4px;">AgentShield</div>
     <div style="font-size:0.72rem; color:#475569; letter-spacing:0.06em; text-transform:uppercase;
@@ -708,40 +717,134 @@ if choice == "🏠 Overview":
         </div>
         """, unsafe_allow_html=True)
 
-    # How it works flow
+    # Animated pipeline
     st.markdown("""
-    <div style="margin:8px 0 20px 0; text-align:center;">
-        <h2 style="font-size:1.5rem; color:#F1F5F9; margin-bottom:16px;">How It Works</h2>
-        <div style="display:flex; align-items:center; justify-content:center; gap:0; flex-wrap:wrap;">
-            <div style="text-align:center; padding:16px 20px; background:rgba(139,92,246,0.1); border:1px solid rgba(139,92,246,0.3); border-radius:12px; min-width:110px;">
-                <div style="font-size:1.6rem;">🤖</div>
-                <div style="font-size:0.75rem; color:#A78BFA; font-weight:600; margin-top:4px; font-family:'Space Grotesk',sans-serif;">Claude Agent</div>
-                <div style="font-size:0.65rem; color:#475569; margin-top:2px;">Handles user requests</div>
+    <style>
+    .pipeline-wrap {
+        position:relative; background:rgba(13,17,23,0.95);
+        border:1px solid rgba(0,229,255,0.12); border-radius:20px;
+        padding:36px 28px 28px 28px; margin:12px 0 24px 0; overflow:hidden;
+    }
+    .pipeline-wrap::before {
+        content:''; position:absolute; inset:0;
+        background:radial-gradient(ellipse at 50% 0%, rgba(0,229,255,0.05) 0%, transparent 70%);
+        pointer-events:none;
+    }
+    .pipe-title {
+        text-align:center; font-size:1.3rem; font-weight:700;
+        color:#E2E8F0; font-family:'Space Grotesk',sans-serif; margin-bottom:28px;
+    }
+    .pipe-title span { color:#00E5FF; }
+    .pipeline-row {
+        display:flex; align-items:center; justify-content:center;
+        gap:0; position:relative; margin-bottom:24px;
+    }
+    .pipe-node {
+        text-align:center; padding:14px 18px; border-radius:14px;
+        min-width:108px; position:relative; z-index:2; flex-shrink:0;
+    }
+    .pipe-node .icon { font-size:1.8rem; }
+    .pipe-node .label {
+        font-size:0.72rem; font-weight:700; margin-top:6px;
+        font-family:'Space Grotesk',sans-serif; letter-spacing:0.02em;
+    }
+    .pipe-node .sub { font-size:0.6rem; color:#64748B; margin-top:2px; }
+    .node-user   { background:rgba(124,58,237,0.12); border:1px solid rgba(124,58,237,0.35); }
+    .node-agent  { background:rgba(0,229,255,0.08);  border:1px solid rgba(0,229,255,0.35);  animation:node-ping 3s ease infinite; }
+    .node-shield { background:rgba(0,200,83,0.1);    border:1px solid rgba(0,200,83,0.4);    animation:node-ping 3s ease 0.5s infinite; }
+    .node-splunk { background:rgba(255,107,53,0.1);  border:1px solid rgba(255,107,53,0.35); animation:node-ping 3s ease 1s infinite; }
+    .node-spl    { background:rgba(251,191,36,0.08); border:1px solid rgba(251,191,36,0.3);  animation:node-ping 3s ease 1.5s infinite; }
+    .node-dash   { background:rgba(0,229,255,0.1);   border:1px solid rgba(0,229,255,0.4);   animation:node-ping 3s ease 2s infinite; }
+    .pipe-track {
+        flex:1; height:3px; position:relative; overflow:visible; min-width:30px;
+        background:rgba(255,255,255,0.05); border-radius:99px;
+    }
+    /* Normal traffic — cyan dots */
+    .pipe-track::before {
+        content:''; position:absolute; top:50%; margin-top:-5px;
+        width:10px; height:10px; border-radius:50%;
+        background:#00E5FF; box-shadow:0 0 8px #00E5FF;
+        animation:flow-packet 3s linear infinite;
+    }
+    /* Attack traffic — orange dots, every other track */
+    .pipe-track.attack::before {
+        background:#FF6B35; box-shadow:0 0 10px #FF6B35;
+        animation:flow-packet 3s linear 1.5s infinite;
+    }
+    .pipe-track.blocked::before {
+        background:#FF6B35; box-shadow:0 0 10px #FF6B35;
+        animation:flow-packet-blocked 3s linear 1.5s infinite;
+    }
+    .legend-row {
+        display:flex; justify-content:center; gap:28px; margin-top:4px;
+    }
+    .legend-item {
+        display:flex; align-items:center; gap:7px;
+        font-size:0.72rem; color:#94A3B8; font-family:'Space Grotesk',sans-serif;
+    }
+    .legend-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+    .status-bar {
+        display:flex; justify-content:center; gap:20px; margin-top:14px; flex-wrap:wrap;
+    }
+    .status-chip {
+        padding:5px 14px; border-radius:99px; font-size:0.7rem;
+        font-weight:600; font-family:'Space Grotesk',sans-serif; letter-spacing:0.04em;
+    }
+    </style>
+    <div class="pipeline-wrap">
+        <div class="pipe-title">Live Data Flow — <span>Watch events travel through AgentShield</span></div>
+        <div class="pipeline-row">
+            <div class="pipe-node node-user">
+                <div class="icon">👤</div>
+                <div class="label" style="color:#A78BFA;">User / Attacker</div>
+                <div class="sub">Sends prompt</div>
             </div>
-            <div style="color:#8B5CF6; font-size:1.4rem; padding:0 8px;">→</div>
-            <div style="text-align:center; padding:16px 20px; background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.3); border-radius:12px; min-width:110px;">
-                <div style="font-size:1.6rem;">🛡️</div>
-                <div style="font-size:0.75rem; color:#06B6D4; font-weight:600; margin-top:4px; font-family:'Space Grotesk',sans-serif;">AgentShield API</div>
-                <div style="font-size:0.65rem; color:#475569; margin-top:2px;">Scores every transaction</div>
+            <div class="pipe-track"></div>
+            <div class="pipe-node node-agent">
+                <div class="icon">🤖</div>
+                <div class="label" style="color:#00E5FF;">Claude Agent</div>
+                <div class="sub">Processes request</div>
             </div>
-            <div style="color:#8B5CF6; font-size:1.4rem; padding:0 8px;">→</div>
-            <div style="text-align:center; padding:16px 20px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:12px; min-width:110px;">
-                <div style="font-size:1.6rem;">📡</div>
-                <div style="font-size:0.75rem; color:#F87171; font-weight:600; margin-top:4px; font-family:'Space Grotesk',sans-serif;">Splunk HEC</div>
-                <div style="font-size:0.65rem; color:#475569; margin-top:2px;">Indexes all events</div>
+            <div class="pipe-track blocked"></div>
+            <div class="pipe-node node-shield">
+                <div class="icon">🛡️</div>
+                <div class="label" style="color:#00C853;">AgentShield</div>
+                <div class="sub">Scores &amp; intercepts</div>
             </div>
-            <div style="color:#8B5CF6; font-size:1.4rem; padding:0 8px;">→</div>
-            <div style="text-align:center; padding:16px 20px; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); border-radius:12px; min-width:110px;">
-                <div style="font-size:1.6rem;">🔎</div>
-                <div style="font-size:0.75rem; color:#34D399; font-weight:600; margin-top:4px; font-family:'Space Grotesk',sans-serif;">SPL Detections</div>
-                <div style="font-size:0.65rem; color:#475569; margin-top:2px;">9 alert rules fire</div>
+            <div class="pipe-track attack"></div>
+            <div class="pipe-node node-splunk">
+                <div class="icon">📡</div>
+                <div class="label" style="color:#FF6B35;">Splunk HEC</div>
+                <div class="sub">Indexes event</div>
             </div>
-            <div style="color:#8B5CF6; font-size:1.4rem; padding:0 8px;">→</div>
-            <div style="text-align:center; padding:16px 20px; background:rgba(236,72,153,0.1); border:1px solid rgba(236,72,153,0.3); border-radius:12px; min-width:110px;">
-                <div style="font-size:1.6rem;">📊</div>
-                <div style="font-size:0.75rem; color:#F472B6; font-weight:600; margin-top:4px; font-family:'Space Grotesk',sans-serif;">This Dashboard</div>
-                <div style="font-size:0.65rem; color:#475569; margin-top:2px;">Visualize & respond</div>
+            <div class="pipe-track"></div>
+            <div class="pipe-node node-spl">
+                <div class="icon">🔎</div>
+                <div class="label" style="color:#FBBF24;">SPL Detections</div>
+                <div class="sub">9 alert rules</div>
             </div>
+            <div class="pipe-track"></div>
+            <div class="pipe-node node-dash">
+                <div class="icon">📊</div>
+                <div class="label" style="color:#00E5FF;">Dashboard</div>
+                <div class="sub">Visualize &amp; act</div>
+            </div>
+        </div>
+        <div class="legend-row">
+            <div class="legend-item">
+                <div class="legend-dot" style="background:#00E5FF;box-shadow:0 0 6px #00E5FF;"></div>
+                Normal traffic — flows through, logged to Splunk
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background:#FF6B35;box-shadow:0 0 6px #FF6B35;"></div>
+                Attack traffic — intercepted at AgentShield, still indexed as threat event
+            </div>
+        </div>
+        <div class="status-bar">
+            <div class="status-chip" style="background:rgba(0,200,83,0.12);border:1px solid rgba(0,200,83,0.3);color:#00C853;">● HEC Connected</div>
+            <div class="status-chip" style="background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.25);color:#00E5FF;">● Claude API Live</div>
+            <div class="status-chip" style="background:rgba(255,107,53,0.1);border:1px solid rgba(255,107,53,0.25);color:#FF6B35;">● Threat Detection Active</div>
+            <div class="status-chip" style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.2);color:#FBBF24;">● SPL Rules Loaded</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
