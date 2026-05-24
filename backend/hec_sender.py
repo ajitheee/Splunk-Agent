@@ -6,11 +6,12 @@ import requests
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-SPLUNK_HEC_URL = os.getenv("SPLUNK_HEC_URL", "https://localhost:8088/services/collector/event")
-SPLUNK_HEC_TOKEN = os.getenv("SPLUNK_HEC_TOKEN", "")
 FALLBACK_LOG_FILE = os.getenv("FALLBACK_LOG_FILE", "../data/ai_agent_logs.jsonl")
 
 def send_event_to_splunk(event_data: dict):
+    SPLUNK_HEC_URL = os.getenv("SPLUNK_HEC_URL", "")
+    SPLUNK_HEC_TOKEN = os.getenv("SPLUNK_HEC_TOKEN", "")
+
     # Always write to fallback log file first
     try:
         os.makedirs(os.path.dirname(FALLBACK_LOG_FILE), exist_ok=True)
