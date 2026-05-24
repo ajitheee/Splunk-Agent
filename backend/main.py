@@ -89,6 +89,17 @@ def _enrich_and_send(event: dict, span) -> dict:
         worst = max(policy_hits, key=lambda p: {"critical": 4, "high": 3, "medium": 2, "low": 1}.get(p["severity_override"], 0))
         event["policy_action"] = worst["action"]
 
+    # Determine action_taken based on actual signals
+    injection_score = event.get("injection_score", 0)
+    tool_allowed = event.get("tool_allowed", True)
+    severity = event.get("severity", "low")
+    if (not tool_allowed) or (injection_score >= 70) or (severity == "critical"):
+        event["action_taken"] = "blocked"
+    elif severity == "high" or injection_score >= 50 or policy_hits:
+        event["action_taken"] = "flagged"
+    else:
+        event["action_taken"] = "monitored"
+
     # V5: Budget check
     budget_result = check_and_update_budget(event)
     event["budget_violations"] = [v["type"] for v in budget_result["violations"]]

@@ -85,7 +85,7 @@ def generate_normal_event(model: str = None) -> dict:
 
 
 def generate_attack_event(model: str = None) -> dict:
-    model = model or "gpt-4"
+    model = model or random.choice(["claude-haiku-4-5", "claude-sonnet-4-6"])
     profile = MODEL_PROFILES[model]
     injection_score = random.randint(85, 99)
     quality_score = round(random.uniform(0.1, 0.4), 2)

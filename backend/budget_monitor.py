@@ -11,10 +11,10 @@ BUDGET_STATE_FILE = os.path.join(_BASE, "..", "data", "budget_state.json")
 
 DEFAULT_CONFIG = {
     "budgets": {
-        "per_session_token_limit": 5000,
-        "per_session_cost_limit_usd": 1.00,
-        "daily_cost_limit_usd": 50.00,
-        "daily_token_limit": 500000,
+        "per_session_token_limit": 800,
+        "per_session_cost_limit_usd": 0.05,
+        "daily_cost_limit_usd": 5.00,
+        "daily_token_limit": 50000,
         "alert_threshold_pct": 80
     },
     "actions": {
