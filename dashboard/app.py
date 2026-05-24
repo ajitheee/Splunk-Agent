@@ -737,7 +737,7 @@ if choice == "📊 Observability":
                         orientation="h",
                         marker=dict(
                             color=rt["count"],
-                            colorscale=[[0, "#8B5CF622"], [0.5, "#EC489944"], [1, "#EF4444"]],
+                            colorscale=[[0, "#8B5CF6"], [0.5, "#EC4899"], [1, "#EF4444"]],
                             showscale=False,
                             line=dict(width=0)
                         ),
@@ -807,9 +807,7 @@ if choice == "📊 Observability":
                         x=df["injection_score"],
                         nbinsx=20,
                         marker=dict(
-                            color=df["injection_score"],
-                            colorscale=[[0, "#8B5CF622"], [0.5, "#EC489966"], [1, "#EF4444"]],
-                            showscale=False,
+                            color="#EC4899",
                             line=dict(color="#04051A", width=0.5)
                         ),
                         hovertemplate="Injection Score: %{x}<br>Count: %{y}<extra></extra>"
