@@ -892,13 +892,22 @@ if choice == "🏠 Overview":
 elif choice == "📊 Observability":
     st.markdown("""
     <div style="animation:slide-in-up 0.5s ease;">
-        <h1 style="margin:0;font-size:2rem;background:linear-gradient(135deg,#8B5CF6,#EC4899);
+        <h1 style="margin:0;font-size:2rem;background:linear-gradient(135deg,#00E5FF,#7C3AED);
                    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
             📊 Agent Observability
         </h1>
-        <p style="color:#475569;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
-            Real-time telemetry · Token analytics · Threat intelligence · Historical baselines
+        <p style="color:#94A3B8;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
+            Real-time telemetry · Token analytics · Threat intelligence · Cost tracking
         </p>
+    </div>
+    <div style="margin:14px 0;padding:12px 18px;background:rgba(0,229,255,0.06);
+                border:1px solid rgba(0,229,255,0.2);border-radius:10px;border-left:3px solid #00E5FF;">
+        <span style="color:#00E5FF;font-weight:700;font-size:0.82rem;font-family:'Space Grotesk',sans-serif;">
+            👁 JUDGE FOCUS:
+        </span>
+        <span style="color:#94A3B8;font-size:0.82rem;font-family:'Space Grotesk',sans-serif;">
+            &nbsp;Watch the Risk Score chart spike during attacks · Check injection scores &gt;70 (red zone) · Compare latency between normal and attack traffic
+        </span>
     </div>
     """, unsafe_allow_html=True)
     shimmer()
@@ -1155,13 +1164,22 @@ elif choice == "📊 Observability":
 elif choice == "📋 Case Hub":
     st.markdown("""
     <div style="animation:slide-in-up 0.5s ease;">
-        <h1 style="margin:0;font-size:2rem;background:linear-gradient(135deg,#EC4899,#8B5CF6);
+        <h1 style="margin:0;font-size:2rem;background:linear-gradient(135deg,#FF6B35,#7C3AED);
                    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
             📋 Case Management Hub
         </h1>
-        <p style="color:#475569;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
-            Active incidents · Analyst assignments · Threat lifecycle management
+        <p style="color:#94A3B8;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
+            Auto-generated incidents · Analyst assignments · Threat lifecycle management
         </p>
+    </div>
+    <div style="margin:14px 0;padding:12px 18px;background:rgba(255,107,53,0.06);
+                border:1px solid rgba(255,107,53,0.2);border-radius:10px;border-left:3px solid #FF6B35;">
+        <span style="color:#FF6B35;font-weight:700;font-size:0.82rem;font-family:'Space Grotesk',sans-serif;">
+            👁 JUDGE FOCUS:
+        </span>
+        <span style="color:#94A3B8;font-size:0.82rem;font-family:'Space Grotesk',sans-serif;">
+            &nbsp;Cases are auto-created when attacks are detected · Assign to analysts · Change status from New → In Progress → Remediated
+        </span>
     </div>
     """, unsafe_allow_html=True)
     shimmer()
@@ -1333,13 +1351,22 @@ elif choice == "📋 Case Hub":
 elif choice == "🔍 Investigate":
     st.markdown("""
     <div style="animation:slide-in-up 0.5s ease;">
-        <h1 style="margin:0;font-size:2rem;background:linear-gradient(135deg,#06B6D4,#8B5CF6);
+        <h1 style="margin:0;font-size:2rem;background:linear-gradient(135deg,#00E5FF,#FF6B35);
                    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
             🔍 Incident Investigation & Playbook Center
         </h1>
-        <p style="color:#475569;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
-            Forensic timelines · Prompt analysis · Automated containment playbooks
+        <p style="color:#94A3B8;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
+            Forensic timelines · Claude AI summaries · Automated containment playbooks
         </p>
+    </div>
+    <div style="margin:14px 0;padding:12px 18px;background:rgba(0,229,255,0.06);
+                border:1px solid rgba(0,229,255,0.2);border-radius:10px;border-left:3px solid #00E5FF;">
+        <span style="color:#00E5FF;font-weight:700;font-size:0.82rem;font-family:'Space Grotesk',sans-serif;">
+            👁 JUDGE FOCUS:
+        </span>
+        <span style="color:#94A3B8;font-size:0.82rem;font-family:'Space Grotesk',sans-serif;">
+            &nbsp;Select an attack case → click <b style="color:#E2E8F0;">Generate AI Summary</b> to see Claude write a SOC analyst report in real time · Run a playbook to see automated response steps
+        </span>
     </div>
     """, unsafe_allow_html=True)
     shimmer()
@@ -1577,13 +1604,22 @@ elif choice == "🔍 Investigate":
 elif choice == "🚀 Simulate":
     st.markdown("""
     <div style="animation:slide-in-up 0.5s ease;">
-        <h1 style="margin:0;font-size:2rem;background:linear-gradient(135deg,#34D399,#06B6D4);
+        <h1 style="margin:0;font-size:2rem;background:linear-gradient(135deg,#00C853,#00E5FF);
                    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
             🚀 Threat Simulation Console
         </h1>
-        <p style="color:#475569;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
-            Generate synthetic agent traffic · Test detection pipelines · Validate playbook triggers
+        <p style="color:#94A3B8;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
+            Real Claude AI agent · Live attack scenarios · End-to-end detection validation
         </p>
+    </div>
+    <div style="margin:14px 0;padding:12px 18px;background:rgba(0,200,83,0.06);
+                border:1px solid rgba(0,200,83,0.2);border-radius:10px;border-left:3px solid #00C853;">
+        <span style="color:#00C853;font-weight:700;font-size:0.82rem;font-family:'Space Grotesk',sans-serif;">
+            👁 JUDGE FOCUS:
+        </span>
+        <span style="color:#94A3B8;font-size:0.82rem;font-family:'Space Grotesk',sans-serif;">
+            &nbsp;Click <b style="color:#E2E8F0;">Simulate Attack</b> — a real prompt injection is sent to Claude · Watch the risk score, tool block, and policy violations appear · Then check Observability to see it indexed in Splunk
+        </span>
     </div>
     """, unsafe_allow_html=True)
     shimmer()
@@ -1759,13 +1795,22 @@ elif choice == "🚀 Simulate":
 elif choice == "🧪 Model Arena":
     st.markdown("""
     <div style="animation:slide-in-up 0.5s ease;">
-        <h1 style="margin:0;font-size:2rem;background:linear-gradient(135deg,#06B6D4,#34D399);
+        <h1 style="margin:0;font-size:2rem;background:linear-gradient(135deg,#FBBF24,#00E5FF);
                    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
             🧪 Model Comparison Arena
         </h1>
-        <p style="color:#475569;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
-            Cost · Latency · Safety · Quality — across all LLM providers
+        <p style="color:#94A3B8;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
+            Cost · Latency · Safety score · Quality — compared across every simulation run
         </p>
+    </div>
+    <div style="margin:14px 0;padding:12px 18px;background:rgba(251,191,36,0.06);
+                border:1px solid rgba(251,191,36,0.2);border-radius:10px;border-left:3px solid #FBBF24;">
+        <span style="color:#FBBF24;font-weight:700;font-size:0.82rem;font-family:'Space Grotesk',sans-serif;">
+            👁 JUDGE FOCUS:
+        </span>
+        <span style="color:#94A3B8;font-size:0.82rem;font-family:'Space Grotesk',sans-serif;">
+            &nbsp;Each simulation uses a real Claude model · Compare risk score and quality across runs · The bubble chart shows cost vs safety tradeoffs
+        </span>
     </div>
     """, unsafe_allow_html=True)
     shimmer()
@@ -1896,13 +1941,22 @@ elif choice == "🧪 Model Arena":
 elif choice == "💰 Budget Monitor":
     st.markdown("""
     <div style="animation:slide-in-up 0.5s ease;">
-        <h1 style="margin:0;font-size:2rem;background:linear-gradient(135deg,#10B981,#06B6D4);
+        <h1 style="margin:0;font-size:2rem;background:linear-gradient(135deg,#00C853,#FBBF24);
                    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
             💰 Dynamic Budget Monitor
         </h1>
-        <p style="color:#475569;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
-            Token spend · Cost containment · Auto-trigger thresholds
+        <p style="color:#94A3B8;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
+            Per-session token limits · Daily cost caps · Auto-enforcement when limits are hit
         </p>
+    </div>
+    <div style="margin:14px 0;padding:12px 18px;background:rgba(0,200,83,0.06);
+                border:1px solid rgba(0,200,83,0.2);border-radius:10px;border-left:3px solid #00C853;">
+        <span style="color:#00C853;font-weight:700;font-size:0.82rem;font-family:'Space Grotesk',sans-serif;">
+            👁 JUDGE FOCUS:
+        </span>
+        <span style="color:#94A3B8;font-size:0.82rem;font-family:'Space Grotesk',sans-serif;">
+            &nbsp;Live token usage bars fill up as simulations run · Budget violations auto-flag sessions · Adjust limits and see enforcement trigger in real time
+        </span>
     </div>
     """, unsafe_allow_html=True)
     shimmer()
@@ -2035,13 +2089,22 @@ elif choice == "💰 Budget Monitor":
 elif choice == "📜 Policies":
     st.markdown("""
     <div style="animation:slide-in-up 0.5s ease;">
-        <h1 style="margin:0;font-size:2rem;background:linear-gradient(135deg,#F97316,#EC4899);
+        <h1 style="margin:0;font-size:2rem;background:linear-gradient(135deg,#FF6B35,#FBBF24);
                    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
             📜 Policy-as-Code Engine
         </h1>
-        <p style="color:#475569;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
-            Live rule enforcement · Dynamic enable/disable · Intercept unsafe transactions
+        <p style="color:#94A3B8;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
+            Live rule enforcement · Toggle rules on/off · Block injections, PII leaks & unauthorized tools
         </p>
+    </div>
+    <div style="margin:14px 0;padding:12px 18px;background:rgba(255,107,53,0.06);
+                border:1px solid rgba(255,107,53,0.2);border-radius:10px;border-left:3px solid #FF6B35;">
+        <span style="color:#FF6B35;font-weight:700;font-size:0.82rem;font-family:'Space Grotesk',sans-serif;">
+            👁 JUDGE FOCUS:
+        </span>
+        <span style="color:#94A3B8;font-size:0.82rem;font-family:'Space Grotesk',sans-serif;">
+            &nbsp;Toggle a policy off → run an attack simulation → see it bypass detection · Toggle back on → attack is caught again · Demonstrates live policy enforcement
+        </span>
     </div>
     """, unsafe_allow_html=True)
     shimmer()
@@ -2116,13 +2179,22 @@ elif choice == "📜 Policies":
 elif choice == "📈 Baselines":
     st.markdown("""
     <div style="animation:slide-in-up 0.5s ease;">
-        <h1 style="margin:0;font-size:2rem;background:linear-gradient(135deg,#8B5CF6,#06B6D4);
+        <h1 style="margin:0;font-size:2rem;background:linear-gradient(135deg,#7C3AED,#00E5FF);
                    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
             📈 Behavioral Baselines & Anomaly Detection
         </h1>
-        <p style="color:#475569;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
-            3-sigma statistical thresholds · Real-time drift alerting · Metric baselines
+        <p style="color:#94A3B8;margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;">
+            3-sigma statistical thresholds · Real-time drift detection · Attack vs normal separation
         </p>
+    </div>
+    <div style="margin:14px 0;padding:12px 18px;background:rgba(124,58,237,0.06);
+                border:1px solid rgba(124,58,237,0.2);border-radius:10px;border-left:3px solid #7C3AED;">
+        <span style="color:#A78BFA;font-weight:700;font-size:0.82rem;font-family:'Space Grotesk',sans-serif;">
+            👁 JUDGE FOCUS:
+        </span>
+        <span style="color:#94A3B8;font-size:0.82rem;font-family:'Space Grotesk',sans-serif;">
+            &nbsp;Normal traffic builds a statistical baseline · Attack traffic shows up as anomalies outside the 3-sigma band · Run 5+ normal + 5+ attack simulations to see the separation clearly
+        </span>
     </div>
     """, unsafe_allow_html=True)
     shimmer()
