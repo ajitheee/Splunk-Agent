@@ -1291,9 +1291,11 @@ elif choice == "📋 Case Hub":
                     continue
             filtered.append(c)
 
-        # Human-readable attack type labels
+        # Human-readable attack type labels  (keys = exact risk_type values from simulator)
         ATTACK_LABELS = {
             "prompt_injection":   "Prompt Injection Attack",
+            "quality_drop":       "High Hallucination / Quality Drop",
+            "cost_anomaly":       "Token Cost Anomaly",
             "pii_leakage":        "PII Data Leakage",
             "sensitive_tool":     "Sensitive Tool Abuse",
             "data_exfiltration":  "Data Exfiltration Attempt",
@@ -1301,6 +1303,7 @@ elif choice == "📋 Case Hub":
             "cost_spike":         "Token Cost Spike",
             "policy_violation":   "Policy Violation",
             "combined":           "Multi-Vector Attack",
+            "none":               "Normal Transaction",
             "unknown":            "Security Incident",
         }
 
@@ -1519,6 +1522,8 @@ elif choice == "🔍 Investigate":
 
     _ATTACK_LABELS = {
         "prompt_injection":  "Prompt Injection Attack",
+        "quality_drop":      "High Hallucination / Quality Drop",
+        "cost_anomaly":      "Token Cost Anomaly",
         "pii_leakage":       "PII Data Leakage",
         "sensitive_tool":    "Sensitive Tool Abuse",
         "data_exfiltration": "Data Exfiltration Attempt",
@@ -1526,6 +1531,7 @@ elif choice == "🔍 Investigate":
         "cost_spike":        "Token Cost Spike",
         "policy_violation":  "Policy Violation",
         "combined":          "Multi-Vector Attack",
+        "none":              "Normal Transaction",
         "unknown":           "Security Incident",
     }
 
