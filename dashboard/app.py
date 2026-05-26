@@ -1600,6 +1600,90 @@ elif choice == "🔍 Investigate":
                             time.sleep(0.4)
                             trigger_rerun()
 
+                shimmer()
+
+                # ── AI SUMMARY ──────────────────────────────────────────────
+                st.markdown("<h3 style='margin:0 0 4px;'>🤖 Claude AI Summary</h3>", unsafe_allow_html=True)
+                st.markdown("<p style='color:#475569;font-size:0.82rem;margin:0 0 12px;'>Claude reads the full session and writes a plain-English SOC analyst report for this case</p>", unsafe_allow_html=True)
+
+                if st.button("✨ Generate AI Summary", type="primary", use_container_width=True):
+                    with st.spinner("Claude is analysing the case..."):
+                        try:
+                            r = requests.get(f"{API_URL}/incidents/{session_id}/summary", timeout=30)
+                            ai_data = r.json() if r.ok else {}
+                        except Exception:
+                            ai_data = {}
+                    st.session_state[f"ai_summary_{session_id}"] = ai_data
+
+                ai_data = st.session_state.get(f"ai_summary_{session_id}")
+                if ai_data:
+                    err = ai_data.get("error")
+                    if err:
+                        st.warning(f"⚠️ {err}")
+                    else:
+                        # Show which case this covers
+                        st.markdown(f"""
+                        <div style="background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.2);
+                                    border-radius:10px;padding:14px 16px;margin-bottom:10px;">
+                            <div style="font-size:0.72rem;color:#64748B;margin-bottom:8px;font-family:'Fira Code',monospace;">
+                                📋 Analysed case: <code>{session_id}</code> ·
+                                attack type: <span style="color:{sev_color};">{str(risk_type).upper().replace('_',' ')}</span> ·
+                                severity: <span style="color:{sev_color};">{sev_val.upper()}</span>
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
+
+                        sections = [
+                            ("🔍 What happened",       ai_data.get("executive_summary","—"),
+                             "High-level, 2-sentence overview of the entire attack sequence",   "#8B5CF6"),
+                            ("🧩 Why it happened",      ai_data.get("root_cause","—"),
+                             "The single most likely root cause that enabled this attack",       "#EC4899"),
+                            ("⚠️ What was at risk",     ai_data.get("impact","—"),
+                             "Which assets, data or users were threatened",                      "#F97316"),
+                        ]
+                        for label, text, hint, color in sections:
+                            st.markdown(f"""
+                            <div style="background:rgba(15,15,40,0.7);border:1px solid {color}33;
+                                        border-left:3px solid {color};border-radius:8px;
+                                        padding:12px 14px;margin-bottom:8px;">
+                                <div style="font-weight:700;color:{color};font-size:0.85rem;margin-bottom:4px;">{label}</div>
+                                <div style="font-size:0.75rem;color:#475569;margin-bottom:6px;font-style:italic;">{hint}</div>
+                                <div style="color:#CBD5E1;font-size:0.84rem;line-height:1.6;">{text}</div>
+                            </div>
+                            """, unsafe_allow_html=True)
+
+                        # Confidence badge
+                        confidence = ai_data.get("confidence", "")
+                        conf_int = int(str(confidence).replace("%","").strip()) if str(confidence).replace("%","").strip().isdigit() else 0
+                        conf_color = "#34D399" if conf_int >= 80 else ("#EAB308" if conf_int >= 50 else "#EF4444")
+                        st.markdown(f"""
+                        <div style="background:rgba(15,15,40,0.7);border:1px solid {conf_color}33;
+                                    border-left:3px solid {conf_color};border-radius:8px;
+                                    padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;">
+                            <div style="font-weight:700;color:{conf_color};font-size:0.85rem;">🎯 How confident is Claude</div>
+                            <div style="font-size:0.75rem;color:#475569;font-style:italic;">— reliability of this analysis (based on evidence richness)</div>
+                            <div style="margin-left:auto;font-size:1.1rem;font-weight:800;color:{conf_color};font-family:'Fira Code',monospace;">{confidence}</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+
+                        # Recommended actions
+                        actions_raw = ai_data.get("recommended_actions", [])
+                        if actions_raw:
+                            actions_html = "".join(
+                                f'<div style="display:flex;gap:8px;margin-bottom:6px;">'
+                                f'<span style="color:#34D399;font-weight:700;min-width:20px;">{i+1}.</span>'
+                                f'<span style="color:#CBD5E1;font-size:0.83rem;line-height:1.5;">{a}</span></div>'
+                                for i, a in enumerate(actions_raw)
+                            )
+                            st.markdown(f"""
+                            <div style="background:rgba(52,211,153,0.06);border:1px solid rgba(52,211,153,0.2);
+                                        border-left:3px solid #34D399;border-radius:8px;padding:14px 16px;margin-bottom:8px;">
+                                <div style="font-weight:700;color:#34D399;font-size:0.85rem;margin-bottom:4px;">✅ What to do next</div>
+                                <div style="font-size:0.75rem;color:#475569;margin-bottom:10px;font-style:italic;">Concrete remediation steps Claude recommends for this specific case</div>
+                                {actions_html}
+                            </div>
+                            """, unsafe_allow_html=True)
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  PAGE: SIMULATION CONSOLE
@@ -1808,6 +1892,21 @@ elif choice == "🧪 Model Arena":
         <span style="color:#94A3B8;font-size:0.82rem;font-family:'Space Grotesk',sans-serif;">
             &nbsp;Each simulation uses a real Claude model · Compare risk score and quality across runs · The bubble chart shows cost vs safety tradeoffs
         </span>
+    </div>
+    <div style="margin:10px 0 16px;padding:10px 16px;background:rgba(6,182,212,0.05);
+                border:1px solid rgba(6,182,212,0.18);border-radius:8px;display:flex;align-items:flex-start;gap:10px;">
+        <span style="font-size:1.1rem;">ℹ️</span>
+        <div>
+            <span style="color:#06B6D4;font-weight:700;font-size:0.82rem;">How costs &amp; latency are measured</span><br>
+            <span style="color:#94A3B8;font-size:0.8rem;line-height:1.6;">
+                <strong style="color:#34D399;">claude-haiku-4-5</strong> and <strong style="color:#34D399;">claude-sonnet-4-6</strong>
+                use <em>real</em> Anthropic API billing data — tokens billed, exact cost, actual response time.<br>
+                <strong style="color:#FBBF24;">gpt-4 · gpt-4o · gemini-1.5-pro · llama-3-70b</strong> are
+                <em>simulated</em> using realistic ranges derived from each provider's published pricing and
+                observed p50 latency benchmarks — they are not connected to those APIs.
+                This lets you compare the AgentShield security layer across providers without needing all API keys.
+            </span>
+        </div>
     </div>
     """, unsafe_allow_html=True)
     shimmer()
