@@ -1607,16 +1607,21 @@ elif choice == "🔍 Investigate":
                 st.markdown("<p style='color:#475569;font-size:0.82rem;margin:0 0 12px;'>Claude reads the full session and writes a plain-English SOC analyst report for this case</p>", unsafe_allow_html=True)
 
                 if st.button("✨ Generate AI Summary", type="primary", use_container_width=True):
-                    with st.spinner("Claude is analysing the case..."):
+                    with st.spinner("Claude is reading the case and writing your SOC report... (5–15 sec)"):
                         try:
-                            r = requests.get(f"{API_URL}/incidents/{session_id}/summary", timeout=30)
-                            ai_data = r.json() if r.ok else {}
-                        except Exception:
-                            ai_data = {}
+                            r = requests.post(f"{API_URL}/incidents/{session_id}/summary", timeout=45)
+                            if r.ok:
+                                ai_data = r.json()
+                            else:
+                                ai_data = {"error": f"API returned {r.status_code}: {r.text[:200]}"}
+                        except requests.exceptions.Timeout:
+                            ai_data = {"error": "Request timed out after 45 s. Try again — Claude API may be slow."}
+                        except Exception as ex:
+                            ai_data = {"error": f"Connection error: {str(ex)}"}
                     st.session_state[f"ai_summary_{session_id}"] = ai_data
 
-                ai_data = st.session_state.get(f"ai_summary_{session_id}")
-                if ai_data:
+                ai_data = st.session_state.get(f"ai_summary_{session_id}", None)
+                if ai_data is not None:
                     err = ai_data.get("error")
                     if err:
                         st.warning(f"⚠️ {err}")
