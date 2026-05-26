@@ -1671,15 +1671,80 @@ elif choice == "🔍 Investigate":
 
             # ── RIGHT: PLAYBOOKS + CONTROLS ──────────────────────────────────
             with col_right:
+                # ── Decide which playbooks are recommended for this case ──────
+                _rt_lower = str(risk_type).lower()
+                _pii      = str(base_case.get("pii_detected", "false")).lower() == "true"
+                _secret   = str(base_case.get("secret_detected", "false")).lower() == "true"
+                _inj      = (base_case.get("injection_score") or 0) >= 50
+
+                _rec_a = _rt_lower in ("prompt_injection", "sensitive_tool", "data_exfiltration", "combined") or _inj
+                _rec_b = _rt_lower in ("pii_leakage", "combined") or _pii or _secret
+
+                _label_a = "Playbook A: Severe Prompt Injection Response"
+                _label_b = "Playbook B: PII / Data Leakage Containment"
+
+                # Recommended badge helper
+                def _pb_badge(rec):
+                    if rec:
+                        return '<span style="background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);color:#34D399;font-size:0.72rem;font-weight:700;padding:2px 9px;border-radius:20px;margin-left:8px;">✅ Recommended</span>'
+                    return '<span style="background:rgba(100,116,139,0.08);border:1px solid rgba(100,116,139,0.15);color:#475569;font-size:0.72rem;padding:2px 9px;border-radius:20px;margin-left:8px;">Optional</span>'
+
                 # Playbook Engine
                 st.markdown("<h3 style='margin:0 0 4px;'>🛡️ Containment Playbooks</h3>", unsafe_allow_html=True)
-                st.markdown("<p style='color:#475569;font-size:0.82rem;margin:0 0 14px;'>Automated multi-step remediation · Splunk HEC audit emission</p>", unsafe_allow_html=True)
+                st.markdown("<p style='color:#475569;font-size:0.82rem;margin:0 0 10px;'>Automated multi-step remediation · Splunk HEC audit emission</p>", unsafe_allow_html=True)
 
-                playbook_options = [
-                    "Playbook A: Severe Prompt Injection Response",
-                    "Playbook B: PII / Data Leakage Containment"
-                ]
-                playbook_name = st.selectbox("Select Playbook", playbook_options)
+                # Guide card — tells analyst exactly what to run
+                if _rec_a and _rec_b:
+                    _guide_msg = "Both risks detected in this case — run <b>Playbook A</b> first (injection containment), then <b>Playbook B</b> (PII vault)."
+                    _guide_col = "#EAB308"
+                elif _rec_a:
+                    _guide_msg = "Prompt injection detected — run <b>Playbook A</b> to contain this threat."
+                    _guide_col = "#FF6B35"
+                elif _rec_b:
+                    _guide_msg = "PII / sensitive data exposure detected — run <b>Playbook B</b> to contain this threat."
+                    _guide_col = "#EC4899"
+                else:
+                    _guide_msg = "No critical risk signals. Review case details before running a playbook."
+                    _guide_col = "#64748B"
+
+                st.markdown(f"""
+                <div style="background:rgba(15,15,40,0.8);border:1px solid {_guide_col}44;
+                            border-left:3px solid {_guide_col};border-radius:8px;
+                            padding:10px 14px;margin-bottom:14px;font-size:0.82rem;color:#CBD5E1;line-height:1.6;">
+                    💡 {_guide_msg}
+                </div>
+                """, unsafe_allow_html=True)
+
+                # Show both playbooks as cards with recommended badge
+                st.markdown(f"""
+                <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
+                    <div style="background:rgba(15,15,40,0.7);border:1px solid {'rgba(52,211,153,0.25)' if _rec_a else 'rgba(100,116,139,0.12)'};
+                                border-radius:8px;padding:10px 14px;">
+                        <div style="display:flex;align-items:center;flex-wrap:wrap;">
+                            <span style="font-weight:600;color:#E2E8F0;font-size:0.85rem;">🔴 Playbook A</span>
+                            {_pb_badge(_rec_a)}
+                        </div>
+                        <div style="font-size:0.78rem;color:#64748B;margin-top:4px;">
+                            Quarantine session · Disable dangerous tool · Flag user · Emit Splunk alert
+                        </div>
+                    </div>
+                    <div style="background:rgba(15,15,40,0.7);border:1px solid {'rgba(52,211,153,0.25)' if _rec_b else 'rgba(100,116,139,0.12)'};
+                                border-radius:8px;padding:10px 14px;">
+                        <div style="display:flex;align-items:center;flex-wrap:wrap;">
+                            <span style="font-weight:600;color:#E2E8F0;font-size:0.85rem;">🟣 Playbook B</span>
+                            {_pb_badge(_rec_b)}
+                        </div>
+                        <div style="font-size:0.78rem;color:#64748B;margin-top:4px;">
+                            Isolate PII logs · Send compliance webhook · Harden LLM system prompt
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+                # Default the selectbox to whichever is recommended (A takes priority)
+                _default_pb_idx = 0 if (_rec_a or not _rec_b) else 1
+                playbook_options = [_label_a, _label_b]
+                playbook_name = st.selectbox("Select Playbook to Execute", playbook_options, index=_default_pb_idx)
 
                 runs     = case_details.get("playbooks_run", [])
                 past_run = next((r for r in runs if r.get("playbook_name") == playbook_name), None)
