@@ -1291,64 +1291,207 @@ elif choice == "📋 Case Hub":
                     continue
             filtered.append(c)
 
+        # Human-readable attack type labels
+        ATTACK_LABELS = {
+            "prompt_injection":   "Prompt Injection Attack",
+            "pii_leakage":        "PII Data Leakage",
+            "sensitive_tool":     "Sensitive Tool Abuse",
+            "data_exfiltration":  "Data Exfiltration Attempt",
+            "hallucination":      "High Hallucination Risk",
+            "cost_spike":         "Token Cost Spike",
+            "policy_violation":   "Policy Violation",
+            "combined":           "Multi-Vector Attack",
+            "unknown":            "Security Incident",
+        }
+
         if not filtered:
             st.warning("No incidents match your filter criteria.")
         else:
-            st.markdown(f"<p style='color:#475569;font-size:0.85rem;margin:8px 0 12px;'>Showing {len(filtered)} of {total_cases} incidents</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='color:#475569;font-size:0.85rem;margin:8px 0 16px;'>Showing {len(filtered)} of {total_cases} incidents — click any row to expand details</p>", unsafe_allow_html=True)
 
             sev_border = {"critical": "#EF4444", "high": "#F97316", "medium": "#EAB308", "low": "#34D399"}
 
             for idx, c in enumerate(filtered):
-                sess_id   = c.get("session_id", "unknown")
-                status    = c.get("status", "New")
-                severity  = c.get("severity") or "high"
-                risk_type = c.get("risk_type") or "unknown"
-                user_id   = c.get("user_id") or "unknown"
-                score     = c.get("risk_score") or 0
-                timestamp = c.get("timestamp") or ""
-                border_c  = sev_border.get(str(severity).lower(), "#8B5CF6")
+                sess_id    = c.get("session_id", "unknown")
+                status     = c.get("status", "New")
+                severity   = str(c.get("severity") or "high").lower()
+                risk_type  = str(c.get("risk_type") or "unknown").lower()
+                user_id    = c.get("user_id") or "unknown"
+                agent_name = c.get("agent_name") or "unknown"
+                score      = c.get("risk_score") or 0
+                timestamp  = c.get("timestamp") or ""
+                prompt     = c.get("prompt") or "—"
+                response   = c.get("response") or "—"
+                tool_req   = c.get("tool_requested") or "—"
+                tool_ok    = c.get("tool_allowed")
+                inj_score  = c.get("injection_score") or 0
+                hall_score = c.get("hallucination_score") or 0
+                pii        = c.get("pii_detected") or "false"
+                secret     = c.get("secret_detected") or "false"
+                model      = c.get("model") or "—"
+                violations = c.get("policy_violations") or []
+                border_c   = sev_border.get(severity, "#8B5CF6")
 
-                st.markdown(f"""
-                <div class="incident-card" style="border-left: 4px solid {border_c};">
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px;">
-                        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-                            <span style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.05rem;color:#F1F5F9;">
-                                {sess_id}
-                            </span>
+                # Human-readable title
+                attack_label = ATTACK_LABELS.get(risk_type, "Security Incident")
+                case_num     = f"INC-{idx+1:03d}"
+                tool_tag     = (
+                    '<span style="color:#34D399;font-weight:600;">✓ Allowed</span>'
+                    if tool_ok else
+                    '<span style="color:#EF4444;font-weight:600;">✗ Blocked</span>'
+                )
+                # One-line summary sentence
+                summary_line = (
+                    f"Agent <b style='color:#CBD5E1'>{agent_name}</b> received a "
+                    f"<b style='color:{border_c}'>{attack_label.lower()}</b> from user "
+                    f"<b style='color:#A78BFA'>{user_id}</b> — "
+                    f"tool <code>{tool_req}</code> was {'<b style=\"color:#34D399\">allowed</b>' if tool_ok else '<b style=\"color:#EF4444\">blocked</b>'}. "
+                    f"Risk score: <b style='color:{border_c}'>{score}/100</b>."
+                )
+
+                expander_label = f"{case_num}  ·  {attack_label}  ·  {severity.upper()}  ·  {timestamp[:16] if timestamp else '—'}"
+
+                with st.expander(expander_label, expanded=False):
+                    # ── TOP HEADER inside expander ────────────────────────────
+                    st.markdown(f"""
+                    <div style="background:rgba(15,15,40,0.7);border:1px solid {border_c}33;
+                                border-left:4px solid {border_c};border-radius:10px;
+                                padding:14px 18px;margin-bottom:14px;">
+                        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;">
+                            <span style="font-family:'Space Grotesk',sans-serif;font-weight:800;
+                                         font-size:1.1rem;color:#F1F5F9;">{case_num}</span>
+                            <span style="font-family:'Space Grotesk',sans-serif;font-weight:700;
+                                         font-size:1rem;color:{border_c};">{attack_label}</span>
                             {status_badge(status)}
                             {severity_badge(severity)}
                         </div>
-                        <span style="color:#334155;font-size:0.78rem;font-family:'Space Grotesk',sans-serif;">🕒 {timestamp[:19] if timestamp else '—'}</span>
-                    </div>
-
-                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:14px;">
-                        <div>
-                            <div style="font-size:0.68rem;text-transform:uppercase;color:#475569;letter-spacing:0.06em;margin-bottom:3px;">Risk Category</div>
-                            <div style="font-weight:600;color:{border_c};font-size:0.88rem;">{str(risk_type).upper().replace('_', ' ')}</div>
-                        </div>
-                        <div>
-                            <div style="font-size:0.68rem;text-transform:uppercase;color:#475569;letter-spacing:0.06em;margin-bottom:3px;">Analyst</div>
-                            <div style="font-weight:500;color:#A78BFA;font-size:0.88rem;">{c.get('assignee') or 'Unassigned'}</div>
-                        </div>
-                        <div>
-                            <div style="font-size:0.68rem;text-transform:uppercase;color:#475569;letter-spacing:0.06em;margin-bottom:3px;">Risk Score</div>
-                            <div style="font-weight:700;color:#F1F5F9;font-size:0.88rem;">{score}/100</div>
-                            {score_bar(score, border_c)}
-                        </div>
-                        <div>
-                            <div style="font-size:0.68rem;text-transform:uppercase;color:#475569;letter-spacing:0.06em;margin-bottom:3px;">Target User</div>
-                            <div style="font-family:'Fira Code',monospace;color:#CBD5E1;font-size:0.82rem;">{user_id}</div>
+                        <p style="margin:0;font-size:0.84rem;color:#94A3B8;line-height:1.7;">{summary_line}</p>
+                        <div style="margin-top:8px;font-size:0.73rem;color:#475569;font-family:'Fira Code',monospace;">
+                            🪪 Session ref: {sess_id} &nbsp;·&nbsp; 🕒 {timestamp[:19] if timestamp else '—'}
                         </div>
                     </div>
-                </div>
-                """, unsafe_allow_html=True)
+                    """, unsafe_allow_html=True)
 
-                col_btn, _ = st.columns([1, 5])
-                with col_btn:
-                    if st.button(f"🔍 Investigate", key=f"inv_{sess_id}_{idx}"):
-                        st.session_state.selected_case_id = sess_id
-                        st.session_state.navigation_choice = "🔍 Investigate"
-                        trigger_rerun()
+                    # ── DETAIL GRID ───────────────────────────────────────────
+                    d1, d2, d3, d4 = st.columns(4)
+                    with d1: st.markdown(metric_card_html("Agent", agent_name, "Which AI agent", "#8B5CF6", "🤖"), unsafe_allow_html=True)
+                    with d2: st.markdown(metric_card_html("Model", model, "LLM used", "#06B6D4", "💡"), unsafe_allow_html=True)
+                    with d3: st.markdown(metric_card_html("Risk Score", f"{score}/100", "Threat severity", border_c, "🎯"), unsafe_allow_html=True)
+                    with d4: st.markdown(metric_card_html("Analyst", c.get("assignee") or "Unassigned", "Assigned to", "#A78BFA", "👤"), unsafe_allow_html=True)
+
+                    st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+
+                    # ── WHAT THE ATTACKER SENT ────────────────────────────────
+                    st.markdown(f"""
+                    <div style="background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.15);
+                                border-radius:8px;padding:14px 16px;margin-bottom:10px;">
+                        <div style="font-size:0.72rem;text-transform:uppercase;color:#EF4444;
+                                    letter-spacing:0.08em;font-weight:700;margin-bottom:6px;">
+                            💬 What the attacker sent (Prompt)
+                        </div>
+                        <div style="color:#F1F5F9;font-size:0.85rem;line-height:1.7;
+                                    font-family:'Fira Code',monospace;word-break:break-word;">
+                            "{prompt}"
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                    # ── WHAT THE AGENT REPLIED ────────────────────────────────
+                    st.markdown(f"""
+                    <div style="background:rgba(6,182,212,0.05);border:1px solid rgba(6,182,212,0.15);
+                                border-radius:8px;padding:14px 16px;margin-bottom:10px;">
+                        <div style="font-size:0.72rem;text-transform:uppercase;color:#06B6D4;
+                                    letter-spacing:0.08em;font-weight:700;margin-bottom:6px;">
+                            🤖 What the agent replied (Response)
+                        </div>
+                        <div style="color:#CBD5E1;font-size:0.85rem;line-height:1.7;word-break:break-word;">
+                            "{response}"
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                    # ── DETECTION SCORES ──────────────────────────────────────
+                    st.markdown(f"""
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
+                                gap:10px;margin-bottom:10px;">
+                        <div style="background:rgba(15,15,40,0.8);border:1px solid rgba(100,116,139,0.12);
+                                    border-radius:8px;padding:12px;">
+                            <div style="font-size:0.68rem;text-transform:uppercase;color:#475569;
+                                        letter-spacing:0.06em;margin-bottom:4px;">🔧 Tool Requested</div>
+                            <div style="font-family:'Fira Code',monospace;color:#CBD5E1;font-size:0.82rem;margin-bottom:4px;">{tool_req}</div>
+                            <div>{tool_tag}</div>
+                        </div>
+                        <div style="background:rgba(15,15,40,0.8);border:1px solid rgba(100,116,139,0.12);
+                                    border-radius:8px;padding:12px;">
+                            <div style="font-size:0.68rem;text-transform:uppercase;color:#475569;
+                                        letter-spacing:0.06em;margin-bottom:4px;">💉 Injection Score</div>
+                            <div style="font-weight:700;font-size:1.1rem;
+                                        color:{'#EF4444' if inj_score>=70 else '#EAB308' if inj_score>=40 else '#34D399'};">
+                                {inj_score}/100</div>
+                            <div style="font-size:0.72rem;color:#475569;">
+                                {'🚨 High — attack detected' if inj_score>=70 else '⚠️ Medium — suspicious' if inj_score>=40 else '✅ Low — looks clean'}
+                            </div>
+                        </div>
+                        <div style="background:rgba(15,15,40,0.8);border:1px solid rgba(100,116,139,0.12);
+                                    border-radius:8px;padding:12px;">
+                            <div style="font-size:0.68rem;text-transform:uppercase;color:#475569;
+                                        letter-spacing:0.06em;margin-bottom:4px;">🧠 Hallucination Score</div>
+                            <div style="font-weight:700;font-size:1.1rem;
+                                        color:{'#EF4444' if hall_score>=0.7 else '#EAB308' if hall_score>=0.4 else '#34D399'};">
+                                {round(hall_score*100)}%</div>
+                            <div style="font-size:0.72rem;color:#475569;">
+                                {'🚨 High — likely fabricated' if hall_score>=0.7 else '⚠️ Medium — verify' if hall_score>=0.4 else '✅ Low — response grounded'}
+                            </div>
+                        </div>
+                        <div style="background:rgba(15,15,40,0.8);border:1px solid rgba(100,116,139,0.12);
+                                    border-radius:8px;padding:12px;">
+                            <div style="font-size:0.68rem;text-transform:uppercase;color:#475569;
+                                        letter-spacing:0.06em;margin-bottom:4px;">🔒 Sensitive Data</div>
+                            <div style="font-weight:700;font-size:0.88rem;margin-bottom:4px;">
+                                PII: <span style="color:{'#EF4444' if str(pii)=='true' else '#34D399'};">{'Detected' if str(pii)=='true' else 'None found'}</span>
+                            </div>
+                            <div style="font-weight:700;font-size:0.88rem;">
+                                Secrets: <span style="color:{'#EF4444' if str(secret)=='true' else '#34D399'};">{'Detected' if str(secret)=='true' else 'None found'}</span>
+                            </div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                    # ── POLICY VIOLATIONS ─────────────────────────────────────
+                    if violations:
+                        viol_html = "".join(
+                            f'<span style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);'
+                            f'color:#FCA5A5;font-size:0.78rem;padding:3px 10px;border-radius:20px;'
+                            f'font-family:Fira Code,monospace;">{v}</span> '
+                            for v in (violations if isinstance(violations, list) else [violations])
+                        )
+                        st.markdown(f"""
+                        <div style="background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.15);
+                                    border-radius:8px;padding:12px 14px;margin-bottom:10px;">
+                            <div style="font-size:0.72rem;text-transform:uppercase;color:#EF4444;
+                                        letter-spacing:0.08em;font-weight:700;margin-bottom:8px;">
+                                🚨 Policy Rules Triggered
+                            </div>
+                            <div style="display:flex;flex-wrap:wrap;gap:6px;">{viol_html}</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+
+                    # ── ACTION BUTTONS ────────────────────────────────────────
+                    st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
+                    btn1, btn2, _ = st.columns([1.2, 1.2, 2.6])
+                    with btn1:
+                        if st.button("🔍 Full Investigation", key=f"inv_{sess_id}_{idx}", type="primary", use_container_width=True):
+                            st.session_state.selected_case_id = sess_id
+                            st.session_state.navigation_choice = "🔍 Investigate"
+                            trigger_rerun()
+                    with btn2:
+                        st.markdown(f"""
+                        <div style="background:rgba(100,116,139,0.08);border:1px solid rgba(100,116,139,0.15);
+                                    border-radius:8px;padding:6px 12px;font-size:0.78rem;color:#475569;
+                                    font-family:'Fira Code',monospace;text-align:center;margin-top:2px;">
+                            ref: {sess_id[:22]}…
+                        </div>
+                        """, unsafe_allow_html=True)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
