@@ -1517,16 +1517,41 @@ elif choice == "🔍 Investigate":
     """, unsafe_allow_html=True)
     shimmer()
 
+    _ATTACK_LABELS = {
+        "prompt_injection":  "Prompt Injection Attack",
+        "pii_leakage":       "PII Data Leakage",
+        "sensitive_tool":    "Sensitive Tool Abuse",
+        "data_exfiltration": "Data Exfiltration Attempt",
+        "hallucination":     "High Hallucination Risk",
+        "cost_spike":        "Token Cost Spike",
+        "policy_violation":  "Policy Violation",
+        "combined":          "Multi-Vector Attack",
+        "unknown":           "Security Incident",
+    }
+
     cases = get_cases()
     if not cases:
         st.info("💡 No cases loaded. Run simulations first.")
     else:
         all_ids = [c.get("session_id") for c in cases]
+
+        # Build the same INC-NNN · readable name used in Case Hub
+        _inv_label_map = {}
+        for _i, _c in enumerate(cases):
+            _rt = str(_c.get("risk_type") or "unknown").lower()
+            _inv_label_map[_c.get("session_id")] = (
+                f"INC-{_i+1:03d}  ·  {_ATTACK_LABELS.get(_rt, 'Security Incident')}"
+            )
+
         selected_id = st.session_state.get("selected_case_id")
         default_idx = all_ids.index(selected_id) if selected_id in all_ids else 0
 
-        session_id = st.selectbox("Select Case", all_ids, index=default_idx,
-                                   format_func=lambda x: f"🗂 {x}")
+        session_id = st.selectbox(
+            "Select Case",
+            all_ids,
+            index=default_idx,
+            format_func=lambda x: _inv_label_map.get(x, f"🗂 {x}")
+        )
         st.session_state.selected_case_id = session_id
 
         case_details = get_case(session_id)
@@ -1540,6 +1565,7 @@ elif choice == "🔍 Investigate":
             risk_type  = base_case.get("risk_type") or "unknown"
 
             sev_color  = {"critical": "#EF4444", "high": "#F97316", "medium": "#EAB308", "low": "#34D399"}.get(sev_val.lower(), "#8B5CF6")
+            case_display_name = _inv_label_map.get(session_id, f"INC-??? · {risk_type}")
 
             # ── OVERVIEW STRIP ────────────────────────────────────────────────
             o1, o2, o3, o4 = st.columns(4)
@@ -1563,8 +1589,8 @@ elif choice == "🔍 Investigate":
 
             # ── LEFT: FORENSIC TIMELINE ──────────────────────────────────────
             with col_left:
-                st.markdown("<h3 style='margin:0 0 4px;'>🔬 Forensic Transaction Timeline</h3>", unsafe_allow_html=True)
-                st.markdown(f"<p style='color:#475569;font-size:0.82rem;margin:0 0 16px;'>Session: <code>{session_id}</code> · Attack vector: <span style='color:{sev_color};font-weight:600;'>{str(risk_type).upper().replace('_',' ')}</span></p>", unsafe_allow_html=True)
+                st.markdown(f"<h3 style='margin:0 0 4px;'>🔬 {case_display_name}</h3>", unsafe_allow_html=True)
+                st.markdown(f"<p style='color:#475569;font-size:0.82rem;margin:0 0 16px;'>Forensic transaction timeline &nbsp;·&nbsp; ref: <code style='font-size:0.75rem;color:#334155;'>{session_id}</code></p>", unsafe_allow_html=True)
 
                 events = case_details.get("events", [])
 
@@ -1774,9 +1800,9 @@ elif choice == "🔍 Investigate":
                         <div style="background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.2);
                                     border-radius:10px;padding:14px 16px;margin-bottom:10px;">
                             <div style="font-size:0.72rem;color:#64748B;margin-bottom:8px;font-family:'Fira Code',monospace;">
-                                📋 Analysed case: <code>{session_id}</code> ·
-                                attack type: <span style="color:{sev_color};">{str(risk_type).upper().replace('_',' ')}</span> ·
-                                severity: <span style="color:{sev_color};">{sev_val.upper()}</span>
+                                📋 {case_display_name} ·
+                                severity: <span style="color:{sev_color};">{sev_val.upper()}</span> ·
+                                ref: <code style="font-size:0.7rem;">{session_id}</code>
                             </div>
                         </div>
                         """, unsafe_allow_html=True)
